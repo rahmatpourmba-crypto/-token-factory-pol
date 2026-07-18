@@ -89,6 +89,10 @@ async function setLastBlock(block) {
   );
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 const provider = new JsonRpcProvider(RPC_URL);
 const factory = new Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 
@@ -144,8 +148,10 @@ async function backfillPastEvents() {
           });
         }
         await setLastBlock(end);
+        await sleep(150); // جلوگیری از برخورد با محدودیت نرخ RPC
       } catch (chunkErr) {
         console.error(`Error syncing blocks ${start}-${end}, skipping chunk:`, chunkErr.shortMessage || chunkErr.message);
+        await sleep(500); // مکث بیشتر بعد از خطا قبل از رفتن به chunk بعدی
       }
     }
     console.log("Sync complete.");
