@@ -2,7 +2,13 @@
   "name": "token-factory-root",
   "version": "1.0.0",
   "private": true,
+  "main": "server.js",
   "scripts": {
-    "start": "node token-factory/backend/server.js"
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0"
   }
 }
