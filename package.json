@@ -1,7 +1,8 @@
 {
   "name": "token-factory-root",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "start": "cd token-factory/backend && node server.js"
+    "start": "node token-factory/backend/server.js"
   }
 }
