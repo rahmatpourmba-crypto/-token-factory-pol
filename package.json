@@ -2,6 +2,6 @@
   "name": "root-launcher",
   "version": "1.0.0",
   "scripts": {
-    "start": "cd token-factory/backend && npm install && node server.js"
+    "start": "cd backend && npm install && node server.js"
   }
 }
