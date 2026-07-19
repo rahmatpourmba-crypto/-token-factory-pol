@@ -1,16 +1,8 @@
 {
-  "name": "token-factory-backend",
+  "name": "token-factory-root",
   "version": "1.0.0",
-  "description": "Token Factory Backend Server",
-  "main": "server.js",
+  "private": true,
   "scripts": {
-    "start": "node server.js"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.0",
-    "express": "^4.19.0"
+    "start": "node token-factory/backend/server.js"
   }
 }
