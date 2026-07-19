@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "token-factory-backend",
   "version": "1.0.0",
   "description": "Backend for Token Factory",
@@ -16,11 +15,5 @@
   },
   "engines": {
     "node": ">=18.0.0"
-=======
-  "name": "root-launcher",
-  "version": "1.0.0",
-  "scripts": {
-    "start": "cd backend && npm install && node server.js"
->>>>>>> ace9832866424f1b6095f0771909786366e3135f
   }
 }
