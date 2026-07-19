@@ -1,26 +1,19 @@
 {
-  "name": "token-factory",
+  "name": "token-factory-backend",
   "version": "1.0.0",
-  "description": "سایت ساخت توکن ERC-20 روی Polygon با دریافت کمیسیون",
+  "description": "Backend for Token Factory",
+  "main": "backend/server.js",
   "scripts": {
-    "test": "hardhat test",
-    "compile": "hardhat compile",
-    "deploy:amoy": "hardhat run scripts/deploy.js --network polygonAmoy",
-    "deploy:mainnet": "hardhat run scripts/deploy.js --network polygonMainnet",
-    "backend": "node backend/server.js"
-  },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "dotenv": "^16.4.5",
-    "hardhat": "^2.22.0"
+    "start": "node backend/server.js"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.2",
-    "@openzeppelin/contracts-upgradeable": "^5.0.2",
-    "better-sqlite3": "^11.1.2",
     "cors": "^2.8.5",
-    "ethers": "^6.13.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.1",
     "express": "^4.19.2",
-    "solc": "^0.8.24"
+    "pg": "^8.12.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
