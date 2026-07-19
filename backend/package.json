@@ -1,20 +1,18 @@
 {
-  "name": "backend",
+  "name": "token-factory-backend",
   "version": "1.0.0",
+  "description": "Token Factory Backend Server",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
     "ethers": "^6.17.0",
-    "express": "^5.2.1",
+    "express": "^4.19.0",
     "pg": "^8.22.0"
   }
 }

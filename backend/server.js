@@ -1,13 +1,16 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const { Pool } = require("pg");
-const { JsonRpcProvider, Contract } = require("ethers");
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
+const { ethers } = require('ethers');
 
 const app = express();
+
+// تنظیمات Middleware
 app.use(cors());
 app.use(express.json());
 
+<<<<<<< HEAD
 // تنظیمات پورت و متغیرهای محیطی
 const PORT = process.env.PORT || 3000;
 const RPC_URL = process.env.POLYGON_RPC_URL || "https://polygon-rpc.com";
@@ -25,11 +28,17 @@ const FACTORY_ABI = [
 ];
 
 // اتصال به دیتابیس
+=======
+// تنظیمات دیتابیس (استفاده از DATABASE_URL از محیط)
+>>>>>>> ace9832866424f1b6095f0771909786366e3135f
 const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
+<<<<<<< HEAD
 // توابع کمکی دیتابیس
 async function initDb() {
   await pool.query(`
@@ -92,11 +101,28 @@ factory.on("TokenCreated", async (creator, tokenAddress, name, symbol, totalSupp
     });
     await setLastBlock(event.log.blockNumber);
     console.log(`[event] New token registered: ${name} (${symbol})`);
+=======
+// اتصال به شبکه Polygon (استفاده از RPC از محیط)
+const provider = new ethers.JsonRpcProvider(process.env.POLYGON_RPC_URL);
+
+// تست اولیه اتصال
+app.get('/', (req, res) => {
+  res.send('Token Factory Backend is running successfully!');
+});
+
+// اینجا می‌توانید روت‌های دیگر (API) خود را اضافه کنید
+// مثال: دریافت لیست توکن‌ها
+app.get('/api/tokens', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM tokens'); // فرض بر وجود جدول tokens
+    res.json(result.rows);
+>>>>>>> ace9832866424f1b6095f0771909786366e3135f
   } catch (err) {
-    console.error("Error registering event:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
+<<<<<<< HEAD
 // همگام‌سازی بلاک‌های قدیمی
 async function backfillPastEvents() {
   const last = await getLastBlock();
@@ -150,3 +176,11 @@ app.listen(PORT, "0.0.0.0", async () => {
     console.error("Initialization error:", err);
   }
 });
+=======
+// --- بخش حیاتی برای Runflare (پورت پویا و هاست 0.0.0.0) ---
+const port = process.env.PORT || 3000;
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 Server successfully started and listening on port ${port}`);
+});
+>>>>>>> ace9832866424f1b6095f0771909786366e3135f
