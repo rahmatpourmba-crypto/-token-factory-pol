@@ -222,7 +222,6 @@ function MintConsole({ wallet, onConnect }) {
           params: [{ chainId: POLYGON_CHAIN_ID }],
         });
       } catch (switchError) {
-        // اگر شبکه پولیگان در ولت ست نشده باشد، آن را اضافه می‌کند
         if (switchError.code === 4902) {
           await window.ethereum.request({
             method: "wallet_addEthereumChain",
@@ -240,7 +239,17 @@ function MintConsole({ wallet, onConnect }) {
       }
     }
 
-    await window.ethereum.request({ method: "eth_requestAccounts" });
+    // حل مشکل درخواست‌های معلق در متامسک (-32002)
+    await window.ethereum.request({ 
+      method: "eth_requestAccounts",
+      params: []
+    }).catch((err) => {
+      if (err.code === -32002) {
+        throw new Error("درخواست اتصال از قبل در متامسک باز است. لطفا افزونه خود را چک کنید.");
+      }
+      throw err;
+    });
+
     return await provider.getSigner();
   }
 
@@ -278,10 +287,10 @@ function MintConsole({ wallet, onConnect }) {
         const maxFee = withSlippage(fee);
         const usdt = new Contract(USDT_ADDRESS, ERC20_ABI, signer);
         
-        // رفع باگ استاندارد USDT پولیگان: اگر تاییدیه قبلی باقی مانده باشد آن را ابتدا صفر می‌کند
+        // رفع باگ تأییدیه USDT پولیگان
         const currentAllowance = await usdt.allowance(userAddress, FACTORY_ADDRESS);
         if (currentAllowance > 0n) {
-          setStatus({ text: t.statusApprove || "Resetting USDT allowance...", kind: "" });
+          setStatus({ text: "Resetting USDT allowance...", kind: "" });
           const resetTx = await usdt.approve(FACTORY_ADDRESS, 0);
           await resetTx.wait();
         }
@@ -297,7 +306,7 @@ function MintConsole({ wallet, onConnect }) {
       setStatus({ text: t.statusWaiting, kind: "" });
       const receipt = await tx.wait();
 
-      // شیوه پایدار و تضمین شده استخراج لاگ‌ها در ورژن 6 اترز
+      // شیوه پایدار استخراج اِونت در اترز v6
       let foundAddress = "";
       for (const log of receipt.logs) {
         try {
@@ -310,7 +319,7 @@ function MintConsole({ wallet, onConnect }) {
             break;
           }
         } catch {
-          // لاگ‌های فرعی یا مربوط به توکن پرداخت نادیده گرفته می‌شوند
+          // نادیده گرفتن سایر لاگ‌ها
         }
       }
 
@@ -409,12 +418,22 @@ function Shell() {
     document.body.dir = dir;
   }, [lang, dir]);
 
-  // گوش دادن به تغییرات وضعیت حساب کاربر در متامسک به جهت آپدیت ری‌اکتیو کامپوننت‌ها
+  // سیستم هوشمند گوش دادن به وضعیت کیف پول و Auto-Connect
   useEffect(() => {
     if (window.ethereum) {
+      const provider = new BrowserProvider(window.ethereum);
+      
+      // بررسی اتصال‌های از قبل انجام شده (حل باگ نیاز به کلیک مداوم)
+      provider.listAccounts().then((accounts) => {
+        if (accounts.length > 0) {
+          setWallet(accounts[0].address);
+        }
+      }).catch(console.error);
+
       const handleAccounts = (accounts) => {
         setWallet(accounts[0] || null);
       };
+      
       window.ethereum.on("accountsChanged", handleAccounts);
       return () => {
         window.ethereum.removeListener("accountsChanged", handleAccounts);
@@ -424,12 +443,18 @@ function Shell() {
 
   async function connect() {
     try {
-      if (!window.ethereum) return;
+      if (!window.ethereum) {
+        // هدایت مستقیم به دانلود ولت در صورت عدم وجود افزونه
+        window.open("https://metamask.io/download/", "_blank");
+        return;
+      }
       const provider = new BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
-      setWallet(accounts[0]);
+      if (accounts.length > 0) {
+        setWallet(accounts[0]);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Connection rejected:", err);
     }
   }
 
