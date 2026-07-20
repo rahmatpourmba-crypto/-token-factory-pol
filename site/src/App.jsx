@@ -368,7 +368,12 @@ function Shell() {
         <Guide />
         <ListingGuide />
       </div>
-      <footer className="footer">{t.footerNote}</footer>
+      <footer className="footer">
+        {t.footerNote}
+        <div style={{ marginTop: "8px" }}>
+          📧 <a href="mailto:ammm37474@gmail.com">ammm37474@gmail.com</a>
+        </div>
+      </footer>
     </div>
   );
 }
