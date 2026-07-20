@@ -3,9 +3,10 @@ import { BrowserProvider, Contract, parseUnits } from "ethers";
 import { LanguageProvider, useLanguage } from "./i18n.jsx";
 import ListingGuide from "./ListingGuide.jsx";
 import { checkTokenContent } from "./contentFilter.js";
+import TokenList from "./TokenList.jsx";
 
 // آدرس‌ها را بعد از دیپلوی واقعی جایگزین کنید / Replace after real deployment
-const FACTORY_ADDRESS = const FACTORY_ADDRESS = "0x7DEAfCf7B5998F68250bCa1704246380177CEAF6";
+const FACTORY_ADDRESS = "0x7DEAfCf7B5998F68250bCa1704246380177CEAF6";
 const USDT_ADDRESS = "0xc2132D05D31c914a87C6611C10748AEb04B58e8"; // USDT on Polygon Mainnet
 
 const FACTORY_ABI = [
@@ -362,6 +363,7 @@ function Shell() {
         <Header wallet={wallet} onConnect={connect} />
         <Hero />
         <MintConsole wallet={wallet} onConnect={setWallet} />
+        <TokenList />
         <Steps />
         <Guide />
         <ListingGuide />
