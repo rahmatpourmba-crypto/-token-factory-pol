@@ -1,10 +1,31 @@
 import React, { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-// دیکشنری زبان‌های سایت (شامل فارسی، انگلیسی، چینی و کوردی سورانی)
+// کامپوننت لوگوی اختصاصی و مدرن Token Factory
+function TokenFactoryLogo() {
+  return (
+    <div className="flex items-center gap-3">
+      <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_10px_rgba(192,132,252,0.5)]">
+        <defs>
+          <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#C084FC" />
+            <stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" stroke="url(#logo-grad)" strokeWidth="8" strokeDasharray="14 7" strokeLinecap="round" />
+        <circle cx="50" cy="50" r="26" fill="#030712" stroke="url(#logo-grad)" strokeWidth="4" />
+        <path d="M38 38H62M50 38V64" stroke="url(#logo-grad)" strokeWidth="6" strokeLinecap="round" />
+      </svg>
+      <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent">
+        TOKEN FACTORY
+      </span>
+    </div>
+  );
+}
+
+// دیکشنری زبان‌های زنده دنیا (فارسی، عربی، کوردی سورانی، انگلیسی، چینی، اسپانیایی)
 const translations = {
   fa: {
-    title: "کارخانه توکن‌سازی پلیگان",
     guideTitle: "راهنمای سریع اتصال و ساخت توکن",
     step1Title: "۱. نصب کیف پول",
     step1Desc: "کیف پول متامسک یا تراست‌ولت را روی مرورگر یا گوشی خود نصب کنید.",
@@ -20,8 +41,39 @@ const translations = {
     submitBtn: "تایید و ساخت توکن",
     uploading: "در حال آپلود و پرداخت...",
   },
+  ar: {
+    guideTitle: "دليل سريع: ربط المحفظة وإنشاء التوكن",
+    step1Title: "١. تثبيت المحفظة",
+    step1Desc: "قم بتثبيت MetaMask أو Trust Wallet على متصفحك أو هاتفك.",
+    step2Title: "٢. اتصال الشبكة",
+    step2Desc: "انقر فوق زر الاتصال وتأكد من تعيين الشبكة على Polygon Mainnet.",
+    step3Title: "٣. إنشاء التوكن",
+    step3Desc: "أدخل الاسم والرمز والكمية والشعار، ثم قم بإنشاء التوكن فوراً.",
+    tokenName: "اسم التوكن",
+    tokenSymbol: "رمز التوكن (Ticker)",
+    tokenSupply: "إجمالي العرض (Supply)",
+    tokenLogo: "شعار التوكن (صورة)",
+    previewTitle: "معاينة التوكن",
+    submitBtn: "تأكيد وإنشاء التوكن",
+    uploading: "جاري الرفع والمعالجة...",
+  },
+  ckb: {
+    guideTitle: "ڕێنمایی خێرا: بەستنەوەی جزدان و دروستکردنی تۆکن",
+    step1Title: "١. دابەزراندنی جزدان",
+    step1Desc: "جزدانی مێتاماسک یان تراست وەلێت لەسەر مۆبایل یان وێبگەڕەکەت دامەزرێنە.",
+    step2Title: "٢. بەستنەوەی تۆڕ",
+    step2Desc: "کڵیکی دوگمەی بەستنەوە بکە و دڵنیابە لەوەی سەر پۆلیگانە.",
+    step3Title: "٣. دروستکردنی تۆکن",
+    step3Desc: "ناو، هێما، بڕ و وێنەکە دابنە و تۆکنەکەت دروست بکە.",
+    tokenName: "ناوی تۆکن",
+    tokenSymbol: "هێمای تۆکن",
+    tokenSupply: "کۆی گشتی بڕی تۆکن",
+    tokenLogo: "وێنەی تۆکن (لۆگۆ)",
+    previewTitle: "پێشکلکردنی زانیارییەکانی تۆکن",
+    submitBtn: "پەسندکردن و دروستکردنی تۆکن",
+    uploading: "لە کاتی بارکردن و ئەنجامدان...",
+  },
   en: {
-    title: "Polygon Token Factory",
     guideTitle: "Quick Guide: Wallet & Token Creation",
     step1Title: "1. Install Wallet",
     step1Desc: "Install MetaMask or Trust Wallet on your browser or mobile device.",
@@ -38,7 +90,6 @@ const translations = {
     uploading: "Uploading & Processing...",
   },
   zh: {
-    title: "Polygon 代币工厂",
     guideTitle: "快速指南：连接钱包与创建代币",
     step1Title: "1. 安装钱包",
     step1Desc: "在您的浏览器或手机上安装 MetaMask 或 Trust Wallet。",
@@ -54,28 +105,27 @@ const translations = {
     submitBtn: "确认并创建代币",
     uploading: "正在上传与处理...",
   },
-  ckb: {
-    title: "کارگەی تۆکنی پۆلیگان",
-    guideTitle: "ڕێنمایی خێرا: بەستنەوەی جزدان و دروستکردنی تۆکن",
-    step1Title: "١. دابەزراندنی جزدان",
-    step1Desc: "جزدانی مێتاماسک یان تراست وەلێت لەسەر مۆبایل یان وێبگەڕەکەت دامەزرێنە.",
-    step2Title: "٢. بەستنەوەی تۆڕ",
-    step2Desc: "کڵیکی دوگمەی بەستنەوە بکە و دڵنیابە لەوەی سەر پۆلیگانە.",
-    step3Title: "٣. دروستکردنی تۆکن",
-    step3Desc: "ناو، هێما، بڕ و وێنەکە دابنە و تۆکنەکەت دروست بکە.",
-    tokenName: "ناوی تۆکن",
-    tokenSymbol: "هێمای تۆکن",
-    tokenSupply: "کۆی گشتی بڕی تۆکن",
-    tokenLogo: "وێنەی تۆکن (لۆگۆ)",
-    previewTitle: "پێشکلکردنی زانیارییەکانی تۆکن",
-    submitBtn: "پەسندکردن و دروستکردنی تۆکن",
-    uploading: "لە کاتی بارکردن و ئەنجامدان...",
+  es: {
+    guideTitle: "Guía rápida: Billetera y Creación de Tokens",
+    step1Title: "1. Instalar Billetera",
+    step1Desc: "Instala MetaMask o Trust Wallet en tu navegador o dispositivo móvil.",
+    step2Title: "2. Conectar Red",
+    step2Desc: "Haz clic en conectar y asegúrate de estar en Polygon Mainnet.",
+    step3Title: "3. Crear Token",
+    step3Desc: "Ingresa nombre, símbolo, suministro y logo para acuñar tu token.",
+    tokenName: "Nombre del Token",
+    tokenSymbol: "Símbolo",
+    tokenSupply: "Suministro Total",
+    tokenLogo: "Logo del Token",
+    previewTitle: "Vista Previa",
+    submitBtn: "Aprobar y Crear Token",
+    uploading: "Subiendo y procesando...",
   }
 };
 
 export default function App() {
-  const [lang, setLang] = useState('fa'); // زبان پیش‌فرض فارسی
-  const t = translations[lang];
+  const [lang, setLang] = useState('fa'); 
+  const t = translations[lang] || translations.en;
 
   const [tokenName, setTokenName] = useState('');
   const [tokenSymbol, setTokenSymbol] = useState('');
@@ -92,45 +142,71 @@ export default function App() {
     }
   };
 
+  const uploadToIPFS = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+      method: "POST",
+      headers: {
+        pinata_api_key: "YOUR_PINATA_API_KEY",          
+        pinata_secret_api_key: "YOUR_PINATA_SECRET_KEY"  
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data.IpfsHash) {
+      return `https://gateway.pinata.cloud/ipfs/${data.IpfsHash}`;
+    }
+    throw new Error("خطا در آپلود عکس");
+  };
+
   const handleCreateToken = async (e) => {
     e.preventDefault();
     try {
       setUploading(true);
-      alert("در حال پردازش و اتصال به قرارداد هوشمند...");
+      let imageUrl = "";
+      if (imageFile) {
+        imageUrl = await uploadToIPFS(imageFile);
+      }
+      alert(`توکن با موفقیت آماده شد! لینک عکس: ${imageUrl || "بدون عکس"}`);
     } catch (error) {
       console.error(error);
+      alert("خطایی رخ داد. لطفا دوباره تلاش کنید.");
     } finally {
       setUploading(false);
     }
   };
 
+  const isRtl = ['fa', 'ar', 'ckb'].includes(lang);
+
   return (
-    <div className={`min-h-screen bg-gray-950 text-white p-6 font-sans ${lang === 'ckb' || lang === 'fa' ? 'rtl' : 'ltr'}`}>
+    <div className={`min-h-screen bg-gray-950 text-white p-6 font-sans ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
       
-      {/* هدر سایت شامل انتخاب زبان و دکمه اتصال کیف پول */}
+      {/* هدر سایت شامل لوگو، منوی زبان و دکمه اتصال کیف پول */}
       <header className="flex flex-wrap justify-between items-center max-w-4xl mx-auto mb-8 pb-4 border-b border-gray-800 gap-4">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-          {t.title}
-        </h1>
+        <TokenFactoryLogo />
 
         <div className="flex items-center gap-4">
-          {/* منوی انتخاب زبان */}
           <select 
             value={lang} 
             onChange={(e) => setLang(e.target.value)}
             className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 cursor-pointer"
           >
             <option value="fa">فارسی</option>
+            <option value="ar">العربية</option>
             <option value="ckb">کوردی (سۆرانی)</option>
             <option value="en">English</option>
             <option value="zh">中文</option>
+            <option value="es">Español</option>
           </select>
 
           <ConnectButton />
         </div>
       </header>
 
-      {/* بخش راهنمای گام‌به‌گام جذاب */}
+      {/* بخش راهنمای چندزبانه گام‌به‌گام */}
       <section className="max-w-xl mx-auto mb-8 bg-gradient-to-br from-purple-900/20 to-gray-900 border border-purple-500/30 p-6 rounded-2xl shadow-xl">
         <h3 className="text-base font-bold text-purple-300 mb-4 flex items-center gap-2">
           <span>💡</span> {t.guideTitle}
