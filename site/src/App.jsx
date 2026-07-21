@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 function TokenFactoryLogo() {
@@ -60,7 +60,6 @@ const translations = {
 export default function App() {
   const [lang, setLang] = useState('fa'); 
   const t = translations[lang] || translations.en;
-
   const [tokenName, setTokenName] = useState('');
   const [tokenSymbol, setTokenSymbol] = useState('');
   const [tokenSupply, setTokenSupply] = useState('');
@@ -92,11 +91,9 @@ export default function App() {
   const isRtl = lang === 'fa';
 
   return (
-    <div className={`min-h-screen bg-gray-950 text-white p-6 font-sans ${isRtl ? 'rtl' : 'ltr'}`} dir={isRtl ? 'rtl' : 'ltr'}>
-      
+    <div className={min-h-screen bg-gray-950 text-white p-6 font-sans } dir={isRtl ? 'rtl' : 'ltr'}>
       <header className="flex flex-wrap justify-between items-center max-w-4xl mx-auto mb-8 pb-4 border-b border-gray-800 gap-4">
         <TokenFactoryLogo />
-
         <div className="flex items-center gap-4">
           <select 
             value={lang} 
@@ -106,11 +103,9 @@ export default function App() {
             <option value="fa">فارسی</option>
             <option value="en">English</option>
           </select>
-
           <ConnectButton />
         </div>
       </header>
-
       <section className="max-w-xl mx-auto mb-8 bg-gradient-to-br from-purple-900/20 to-gray-900 border border-purple-500/30 p-6 rounded-2xl shadow-xl">
         <h3 className="text-base font-bold text-purple-300 mb-4 flex items-center gap-2">
           <span>💡</span> {t.guideTitle}
@@ -130,7 +125,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       <main className="max-w-xl mx-auto bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl">
         <div className="mb-8 p-4 bg-gray-950 border border-purple-500/30 rounded-xl">
           <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">
@@ -154,7 +148,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
         <form onSubmit={handleCreateToken} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">{t.tokenName}</label>
@@ -167,7 +160,6 @@ export default function App() {
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">{t.tokenSymbol}</label>
             <input
@@ -179,7 +171,6 @@ export default function App() {
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">{t.tokenSupply}</label>
             <input
@@ -191,7 +182,6 @@ export default function App() {
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">{t.tokenLogo}</label>
             <input
@@ -201,7 +191,6 @@ export default function App() {
               className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
             />
           </div>
-
           <button
             type="submit"
             disabled={uploading}
