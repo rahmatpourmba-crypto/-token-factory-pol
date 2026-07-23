@@ -3,16 +3,24 @@ import { useLanguage } from "./i18n.jsx";
 
 function Logo() {
   return (
-    <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#C084FC" /><stop offset="100%" stopColor="#EC4899" />
-        </linearGradient>
-      </defs>
-      <circle cx="50" cy="50" r="42" stroke="url(#lg)" strokeWidth="8" strokeDasharray="14 7" strokeLinecap="round" />
-      <circle cx="50" cy="50" r="26" fill="#030712" stroke="url(#lg)" strokeWidth="4" />
-      <path d="M38 38H62M50 38V64" stroke="url(#lg)" strokeWidth="6" strokeLinecap="round" />
-    </svg>
+    <div className="flex items-center gap-2">
+      <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_8px_rgba(192,132,252,0.4)]">
+        <defs>
+          <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#C084FC" /><stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" stroke="url(#lg)" strokeWidth="8" strokeDasharray="14 7" strokeLinecap="round" />
+        <circle cx="50" cy="50" r="26" fill="#030712" stroke="url(#lg)" strokeWidth="4" />
+        <path d="M38 38H62M50 38V64" stroke="url(#lg)" strokeWidth="6" strokeLinecap="round" />
+      </svg>
+      <div>
+        <div className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight">
+          TOKEN FACTORY
+        </div>
+        <div className="text-[10px] text-gray-500 -mt-0.5">Polygon Network</div>
+      </div>
+    </div>
   );
 }
 
@@ -29,12 +37,23 @@ function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   const { t } = useLanguage();
   const handle = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
   return (
-    <button onClick={handle} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+    <button onClick={handle} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-all active:scale-95">
       {copied ? t.copied : t.copyAddr}
     </button>
   );
@@ -75,8 +94,8 @@ const AGGREGATORS = [
   { name: "CoinMarketCap", url: "https://coinmarketcap.com/listing/" },
 ];
 
-function NavBar({ lang, setLang }) {
-  const { t, dir } = useLanguage();
+function NavBar() {
+  const { t, lang, setLang } = useLanguage();
   const langs = [
     { code: "fa", label: "فارسی" }, { code: "en", label: "English" },
     { code: "ar", label: "العربية" }, { code: "ku", label: "کوردی" },
@@ -85,10 +104,7 @@ function NavBar({ lang, setLang }) {
   ];
   return (
     <nav className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-gray-800">
-      <div className="flex items-center gap-2">
-        <Logo />
-        <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{t.brand}</span>
-      </div>
+      <Logo />
       <div className="flex items-center gap-3">
         <select value={lang} onChange={(e) => setLang(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer focus:outline-none focus:border-purple-500">
@@ -109,8 +125,7 @@ function Section({ id, title, children }) {
 }
 
 export default function App() {
-  const [lang, setLang] = useState("fa");
-  const { t, dir } = useLanguage();
+  const { t, dir, lang, setLang } = useLanguage();
 
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
@@ -141,7 +156,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <NavBar lang={lang} setLang={setLang} />
+      <NavBar />
       <div className="text-center py-16 px-4 bg-gradient-to-b from-purple-900/10 to-transparent">
         <h1 className="text-3xl sm:text-5xl font-bold mb-4">
           {t.heroTitle} <span className="text-purple-400 italic">{t.heroTitleAccent}</span>
@@ -213,7 +228,7 @@ export default function App() {
                 </div>
                 <div className="text-sm text-gray-400 mb-2">{t.tokenAddress}</div>
                 <div className="flex items-center gap-2 bg-gray-900 rounded-lg p-3 border border-gray-700">
-                  <code className="flex-1 text-xs sm:text-sm font-mono text-purple-300 break-all">{createdToken.address}</code>
+                  <code className="flex-1 text-xs sm:text-sm font-mono text-purple-300 break-all select-all">{createdToken.address}</code>
                   <CopyButton text={createdToken.address} />
                 </div>
                 <div className="mt-3 flex gap-2 flex-wrap">
