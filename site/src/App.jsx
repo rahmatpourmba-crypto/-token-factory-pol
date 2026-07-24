@@ -130,6 +130,8 @@ export default function App() {
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
   const [tokenSupply, setTokenSupply] = useState("");
+  const [tokenLogo, setTokenLogo] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [payment, setPayment] = useState("matic");
   const [minting, setMinting] = useState(false);
   const [createdToken, setCreatedToken] = useState(null);
@@ -201,6 +203,15 @@ export default function App() {
                 <input type="number" placeholder={t.supplyPlaceholder} value={tokenSupply}
                   onChange={e => setTokenSupply(e.target.value)}
                   className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500" required />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">{t.tokenLogo}</label>
+                <input type="file" accept="image/*" onChange={e => {
+                  const f = e.target.files[0];
+                  if (f) { setTokenLogo(f); setLogoPreview(URL.createObjectURL(f)); }
+                }}
+                  className="w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer" />
+                {logoPreview && <img src={logoPreview} alt="logo" className="mt-2 w-12 h-12 rounded-full object-cover border border-gray-700" />}
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-2">{t.paymentLabel}</label>
@@ -327,7 +338,7 @@ export default function App() {
           <p>🔸 {lang === "fa" ? "هرگز عبارت بازیابی (Seed Phrase) را با کسی به اشتراک نگذارید" : "Never share your Seed Phrase with anyone"}</p>
           <p>🔸 {lang === "fa" ? "هیچکس از طرف تیم با شما تماس خصوصی نمی‌گیرد" : "Team members will never DM you first"}</p>
           <p>🔸 {lang === "fa" ? "همیشه آدرس قرارداد را قبل از خرید چک کنید" : "Always verify contract addresses before buying"}</p>
-          <p>🔸 {lang === "fa" ? "آدرس کیف پول را می‌توانید به صورت دستی تایپ کنید یا کپی و جایگذاری کنید" : "You can type wallet addresses manually or copy & paste"}</p>
+          
         </div>
       </div>
       <footer className="border-t border-gray-800 py-6 text-center text-xs text-gray-500 px-4">{t.footer} | <a href="mailto:ammm37474@gmail.com" className="text-purple-400 hover:text-purple-300 underline">ammm37474@gmail.com</a></footer>
