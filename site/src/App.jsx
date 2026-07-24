@@ -321,6 +321,15 @@ export default function App() {
         </Section>
       )}
 
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 text-xs text-yellow-300 space-y-2">
+          <p className="font-bold">⚠️ {lang === "fa" ? "هشدارهای امنیتی مهم" : "Important Security Warnings"}</p>
+          <p>🔸 {lang === "fa" ? "هرگز عبارت بازیابی (Seed Phrase) را با کسی به اشتراک نگذارید" : "Never share your Seed Phrase with anyone"}</p>
+          <p>🔸 {lang === "fa" ? "هیچکس از طرف تیم با شما تماس خصوصی نمی‌گیرد" : "Team members will never DM you first"}</p>
+          <p>🔸 {lang === "fa" ? "همیشه آدرس قرارداد را قبل از خرید چک کنید" : "Always verify contract addresses before buying"}</p>
+          <p>🔸 {lang === "fa" ? "آدرس کیف پول را می‌توانید به صورت دستی تایپ کنید یا کپی و جایگذاری کنید" : "You can type wallet addresses manually or copy & paste"}</p>
+        </div>
+      </div>
       <footer className="border-t border-gray-800 py-6 text-center text-xs text-gray-500 px-4">{t.footer} | <a href="mailto:ammm37474@gmail.com" className="text-purple-400 hover:text-purple-300 underline">ammm37474@gmail.com</a></footer>
     </div>
   );
