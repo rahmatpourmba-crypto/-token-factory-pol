@@ -3,7 +3,7 @@ import { createContext, useContext, useState } from "react";
 const FA = {
   dir: "rtl", code: "fa", label: "فارسی",
   strings: {
-    brand: "ضرابخانه", brandSub: "ساخت توکن روی Polygon",
+    brand: "PolyMint", brandSub: "ساخت توکن روی Polygon",
     heroTitle: "توکن خودت رو بساز.", heroTitleAccent: "مستقیم به کیف پولت.",
     heroBody: "نام، نماد و عرضه رو تعیین کن، کمیسیون رو با MATIC یا تتر بپرداز، و توکن ERC-20 واقعی روی Polygon توی کیف پولت می‌شینه.",
     tokenCreated: "توکن با موفقیت ساخته شد!", tokenAddress: "آدرس قرارداد توکن",
@@ -48,7 +48,7 @@ const FA = {
 const EN = {
   dir: "ltr", code: "en", label: "English",
   strings: {
-    brand: "Mint", brandSub: "Token creation on Polygon",
+    brand: "PolyMint", brandSub: "Token creation on Polygon",
     heroTitle: "Mint your own token.", heroTitleAccent: "Straight to your wallet.",
     heroBody: "Set name, symbol & supply, pay commission in MATIC or USDT, and a real ERC-20 token lands in your wallet.",
     tokenCreated: "Token minted successfully!", tokenAddress: "Token Contract Address",
@@ -94,7 +94,7 @@ const EN = {
 const AR = {
   dir: "rtl", code: "ar", label: "العربية",
   strings: {
-    brand: "سك العملة", brandSub: "إنشاء رمز على Polygon",
+    brand: "PolyMint", brandSub: "إنشاء رمز على Polygon",
     heroTitle: "أنشئ رمزك الخاص.", heroTitleAccent: "مباشرة إلى محفظتك.",
     heroBody: "حدد الاسم والرمز والعرض، وادفع العمولة بـ MATIC أو USDT، وسيصلك رمز ERC-20 حقيقي إلى محفظتك.",
     tokenCreated: "تم إنشاء الرمز بنجاح!", tokenAddress: "عنوان عقد الرمز",
@@ -139,7 +139,7 @@ const AR = {
 const KU = {
   dir: "rtl", code: "ku", label: "کوردی",
   strings: {
-    brand: "دراو", brandSub: "دروستکردنی توکن له Polygon",
+    brand: "PolyMint", brandSub: "دروستکردنی توکن له Polygon",
     heroTitle: "توکنی خۆت دروست بکە.", heroTitleAccent: "ڕاستەوخۆ بۆ گەمژەی تۆ.",
     heroBody: "ناو، نیشانە و ژمارە دیاری بکە، پارە بدە بە MATIC یان USDT، و توکنێکی ERC-20 ڕاستەقینە دەچێتە گەمژەکەت.",
     tokenCreated: "توکن بە سەرکەوتوویی دروست یا!", tokenAddress: "ناونیشانی توکن",
@@ -184,7 +184,7 @@ const KU = {
 const ZH = {
   dir: "ltr", code: "zh", label: "中文",
   strings: {
-    brand: "铸造", brandSub: "在Polygon上创建代币",
+    brand: "PolyMint", brandSub: "在Polygon上创建代币",
     heroTitle: "铸造你自己的代币。", heroTitleAccent: "直接到你的钱包。",
     heroBody: "设定名称、符号和供应量，用MATIC或USDT支付费用，一个真实的ERC-20代币将直接到达你的钱包。",
     tokenCreated: "代币铸造成功！", tokenAddress: "代币合约地址",
@@ -229,7 +229,7 @@ const ZH = {
 const HI = {
   dir: "ltr", code: "hi", label: "हिन्दी",
   strings: {
-    brand: "टोकन मिंट", brandSub: "Polygon पर टोकन बनाएं",
+    brand: "PolyMint", brandSub: "Polygon पर टोकन बनाएं",
     heroTitle: "अपना खुद का टोकन बनाएं।", heroTitleAccent: "सीधे आपके वॉलेट में।",
     heroBody: "नाम, प्रतीक और आपूर्ति सेट करें, MATIC या USDT में कमीशन दें, और एक वास्तविक ERC-20 टोकन आपके वॉलेट में आ जाएगा।",
     tokenCreated: "टोकन सफलतापूर्वक बन गया!", tokenAddress: "टोकन कॉन्ट्रैक्ट पता",
@@ -274,7 +274,7 @@ const HI = {
 const MS = {
   dir: "ltr", code: "ms", label: "Bahasa Melayu",
   strings: {
-    brand: "Cipta Token", brandSub: "Penciptaan token di Polygon",
+    brand: "PolyMint", brandSub: "Penciptaan token di Polygon",
     heroTitle: "Cipta token anda sendiri.", heroTitleAccent: "Terus ke dompet anda.",
     heroBody: "Tetapkan nama, simbol dan bekalan, bayar komisen dengan MATIC atau USDT, dan token ERC-20 sebenar akan masuk ke dompet anda.",
     tokenCreated: "Token berjaya dicipta!", tokenAddress: "Alamat kontrak token",
@@ -319,7 +319,7 @@ const MS = {
 const DE = {
   dir: "ltr", code: "de", label: "Deutsch",
   strings: {
-    brand: "Token prägen", brandSub: "Token-Erstellung auf Polygon",
+    brand: "PolyMint", brandSub: "Token-Erstellung auf Polygon",
     heroTitle: "Präge deinen eigenen Token.", heroTitleAccent: "Direkt in deine Wallet.",
     heroBody: "Name, Symbol und Supply festlegen, Provision in MATIC oder USDT bezahlen, und ein echter ERC-20 Token landet in deiner Wallet.",
     tokenCreated: "Token erfolgreich erstellt!", tokenAddress: "Token-Vertragsadresse",

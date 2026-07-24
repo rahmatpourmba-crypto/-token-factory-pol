@@ -16,7 +16,7 @@ function Logo() {
       </svg>
       <div>
         <div className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight">
-          TOKEN FACTORY
+          PolyMint
         </div>
         <div className="text-[10px] text-gray-500 -mt-0.5">Polygon Network</div>
       </div>
@@ -321,7 +321,7 @@ export default function App() {
         </Section>
       )}
 
-      <footer className="border-t border-gray-800 py-6 text-center text-xs text-gray-500 px-4">{t.footer}</footer>
+      <footer className="border-t border-gray-800 py-6 text-center text-xs text-gray-500 px-4">{t.footer} | <a href="mailto:ammm37474@gmail.com" className="text-purple-400 hover:text-purple-300 underline">ammm37474@gmail.com</a></footer>
     </div>
   );
 }
