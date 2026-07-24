@@ -256,8 +256,41 @@ export default function App() {
 
       {activeTab === "wallet" && (
         <Section title={t.walletGuide}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
             {WALLETS.map(w => <WalletCard key={w.id} name={w.name} desc={t[w.descKey]} url={w.url} />)}
+          </div>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-green-900/20 border border-green-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-green-400 mb-3">{t.metamaskChromeTitle}</h3>
+              <ol className="space-y-2 text-sm text-gray-300">
+                {[1,2,3,4,5,6].map(i => <li key={i} className="flex gap-3"><span className="text-green-400 font-bold shrink-0">{i}.</span>{t[`metamaskChrome${i}`]}</li>)}
+              </ol>
+            </div>
+            <div className="bg-blue-900/20 border border-blue-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-blue-400 mb-3">{t.metamaskMobileTitle}</h3>
+              <ol className="space-y-2 text-sm text-gray-300">
+                {[1,2,3,4].map(i => <li key={i} className="flex gap-3"><span className="text-blue-400 font-bold shrink-0">{i}.</span>{t[`metamaskMobile${i}`]}</li>)}
+              </ol>
+            </div>
+            <div className="bg-purple-900/20 border border-purple-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-purple-400 mb-3">{t.connectGuideTitle}</h3>
+              <ol className="space-y-2 text-sm text-gray-300">
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`connectStep${i}`]}</li>)}
+              </ol>
+            </div>
+            <div className="bg-amber-900/20 border border-amber-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-amber-400 mb-3">{t.receiveTokenTitle}</h3>
+              <ol className="space-y-2 text-sm text-gray-300">
+                {[1,2,3,4,5,6,7].map(i => <li key={i} className="flex gap-3"><span className="text-amber-400 font-bold shrink-0">{i}.</span>{t[`receiveStep${i}`]}</li>)}
+              </ol>
+            </div>
+            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-cyan-400 mb-3">{t.networkPolygonTitle}</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-line">{t.networkPolygonDesc}</p>
+            </div>
+            <div className="bg-red-900/20 border border-red-600/30 rounded-xl p-4">
+              <p className="text-sm text-red-300">{t.walletNote}</p>
+            </div>
           </div>
         </Section>
       )}
