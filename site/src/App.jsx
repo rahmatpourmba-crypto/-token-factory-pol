@@ -1,5 +1,61 @@
 import React, { useState, useEffect } from "react";
+import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
+import { waitForTransactionReceipt } from 'wagmi/actions';
+import { polygon } from 'wagmi/chains';
+import { injected } from 'wagmi/connectors';
 import { useLanguage } from "./i18n.jsx";
+
+const FACTORY_ADDR = "0x5f9ad349Fc40DeE22f23801238489F17951B0843";
+const FACTORY_ABI = [
+  {
+    inputs: [
+      { internalType: "string", name: "name_", type: "string" },
+      { internalType: "string", name: "symbol_", type: "string" },
+      { internalType: "uint256", name: "totalSupply_", type: "uint256" },
+      { internalType: "uint256", name: "maxFee", type: "uint256" },
+    ],
+    name: "createTokenWithMatic",
+    outputs: [{ internalType: "address", name: "tokenAddress", type: "address" }],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "string", name: "name_", type: "string" },
+      { internalType: "string", name: "symbol_", type: "string" },
+      { internalType: "uint256", name: "totalSupply_", type: "uint256" },
+      { internalType: "address", name: "recipient", type: "address" },
+    ],
+    name: "createTokenFree",
+    outputs: [{ internalType: "address", name: "tokenAddress", type: "address" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "feeInMatic",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "_feeInMatic", type: "uint256" },
+      { internalType: "uint256", name: "_feeInUsdt", type: "uint256" },
+    ],
+    name: "setFees",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
 
 function Logo() {
   return (
@@ -96,6 +152,12 @@ const AGGREGATORS = [
 
 function NavBar() {
   const { t, lang, setLang } = useLanguage();
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const onWrongChain = isConnected && chainId !== polygon.id;
   const langs = [
     { code: "fa", label: "فارسی" }, { code: "en", label: "English" },
     { code: "ar", label: "العربية" }, { code: "ku", label: "کوردی" },
@@ -106,6 +168,23 @@ function NavBar() {
     <nav className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-gray-800">
       <Logo />
       <div className="flex items-center gap-3">
+        {onWrongChain ? (
+          <button onClick={ensurePolygonNetwork}
+            className="bg-red-600 hover:bg-red-700 rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap">
+            ⚠ Switch to Polygon
+          </button>
+        ) : isConnected ? (
+          <button onClick={() => disconnect()}
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 rounded-lg px-3 py-2 text-sm font-medium transition-all">
+            <span className="w-2 h-2 rounded-full bg-green-400" />
+            <span>{address.slice(0, 6)}...{address.slice(-4)}</span>
+          </button>
+        ) : (
+          <button onClick={async () => { await connect({ connector: injected() }); await new Promise(r => setTimeout(r, 800)); await ensurePolygonNetwork(); }}
+            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">
+            Connect Wallet
+          </button>
+        )}
         <select value={lang} onChange={(e) => setLang(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer focus:outline-none focus:border-purple-500">
           {langs.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
@@ -113,6 +192,33 @@ function NavBar() {
       </div>
     </nav>
   );
+}
+
+const POLYGON_CHAIN_PARAMS = {
+  chainId: "0x89",
+  chainName: "Polygon Mainnet",
+  nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
+  rpcUrls: ["https://polygon-rpc.com", "https://polygon.llamarpc.com", "https://rpc.ankr.com/polygon"],
+  blockExplorerUrls: ["https://polygonscan.com"],
+  iconUrls: [],
+};
+
+async function ensurePolygonNetwork() {
+  if (!window.ethereum) return;
+  try {
+    const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+    if (currentChainId === "0x89") return;
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x89" }] });
+  } catch (err) {
+    if (err.code === 4902) {
+      try {
+        await window.ethereum.request({ method: "wallet_addEthereumChain", params: [POLYGON_CHAIN_PARAMS] });
+      } catch (e) { console.error("Failed to add Polygon:", e); }
+    } else if (err.code !== 4001) {
+      console.error("Failed to switch chain:", err);
+    }
+  }
+  await new Promise(r => setTimeout(r, 500));
 }
 
 function Section({ id, title, children }) {
@@ -126,13 +232,20 @@ function Section({ id, title, children }) {
 
 export default function App() {
   const { t, dir, lang, setLang } = useLanguage();
+  const { address, isConnected } = useAccount();
+  const config = useConfig();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const { data: ownerAddr } = useReadContract({ config, chainId: polygon.id, address: FACTORY_ADDR, abi: FACTORY_ABI, functionName: "owner" });
+  const { data: maticFee } = useReadContract({ config, chainId: polygon.id, address: FACTORY_ADDR, abi: FACTORY_ABI, functionName: "feeInMatic" });
+  const isOwner = isConnected && address && ownerAddr && address.toLowerCase() === ownerAddr.toLowerCase();
 
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
   const [tokenSupply, setTokenSupply] = useState("");
   const [tokenLogo, setTokenLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-  const [payment, setPayment] = useState("matic");
   const [minting, setMinting] = useState(false);
   const [createdToken, setCreatedToken] = useState(null);
   const [activeTab, setActiveTab] = useState("create");
@@ -142,15 +255,75 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [dir, lang]);
 
+  useEffect(() => {
+    if (isConnected && chainId !== polygon.id) {
+      ensurePolygonNetwork();
+    }
+  }, [isConnected, chainId]);
+
   const handleMint = async (e) => {
     e.preventDefault();
     if (!tokenName || !tokenSymbol || !tokenSupply) return;
+    if (!isConnected) { alert(t.connectFirst || "Please connect your wallet first"); return; }
     setMinting(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setCreatedToken({
-      address: "0x" + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join(""),
-      name: tokenName, symbol: tokenSymbol, supply: tokenSupply, explorer: "https://polygonscan.com",
-    });
+    try {
+      if (chainId !== polygon.id) {
+        await ensurePolygonNetwork();
+      }
+      const supplyWei = (BigInt(tokenSupply) * 10n ** 18n).toString();
+      let hash;
+      if (isOwner) {
+        hash = await writeContractAsync({
+          address: FACTORY_ADDR,
+          abi: FACTORY_ABI,
+          functionName: "createTokenFree",
+          args: [tokenName, tokenSymbol, supplyWei, address],
+        });
+      } else {
+        const maxFee = maticFee ? (maticFee + 1n).toString() : "25000000000000000001";
+        hash = await writeContractAsync({
+          address: FACTORY_ADDR,
+          abi: FACTORY_ABI,
+          functionName: "createTokenWithMatic",
+          args: [tokenName, tokenSymbol, supplyWei, maxFee],
+          value: maticFee ? maticFee.toString() : "25000000000000000000",
+        });
+      }
+      setCreatedToken({
+        address: "⏳ Waiting for confirmation...",
+        name: tokenName, symbol: tokenSymbol, supply: tokenSupply, explorer: "https://polygonscan.com",
+      });
+      const receipt = await waitForTransactionReceipt(config, { hash });
+      let tokenAddr = null;
+      const TOKEN_CREATED_TOPIC = "0x6bbf6b425f827619d9ed2012826973c1f03decdfa91aa03d3c882cad1e650321";
+      const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+      for (const log of receipt.logs) {
+        if (log.topics[0] === TOKEN_CREATED_TOPIC && log.topics.length >= 3) {
+          tokenAddr = "0x" + log.topics[2].slice(26);
+          break;
+        }
+      }
+      if (!tokenAddr) {
+        for (const log of receipt.logs) {
+          if (log.topics[0] === TRANSFER_TOPIC && log.topics.length >= 3) {
+            const possibleAddr = "0x" + log.topics[2].slice(26);
+            if (possibleAddr.toLowerCase() !== FACTORY_ADDR.toLowerCase()) {
+              tokenAddr = possibleAddr;
+              break;
+            }
+          }
+        }
+      }
+      setCreatedToken({
+        address: tokenAddr || hash,
+        name: tokenName, symbol: tokenSymbol, supply: tokenSupply, explorer: "https://polygonscan.com",
+      });
+      const existing = JSON.parse(localStorage.getItem("deployedTokens") || "[]");
+      existing.push({ tokenAddress: tokenAddr || hash, name: tokenName, symbol: tokenSymbol, totalSupply: tokenSupply });
+      localStorage.setItem("deployedTokens", JSON.stringify(existing));
+    } catch (err) {
+      alert(err?.shortMessage || err?.message || "Transaction failed");
+    }
     setMinting(false);
   };
 
@@ -174,6 +347,7 @@ export default function App() {
           { id: "buy", label: t.howToBuy },
           { id: "dex", label: t.liquidity },
           { id: "tokens", label: t.tokensList },
+          ...(isOwner ? [{ id: "owner", label: "🔧 Owner" }] : []),
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}>
@@ -213,17 +387,15 @@ export default function App() {
                   className="w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer" />
                 {logoPreview && <img src={logoPreview} alt="logo" className="mt-2 w-12 h-12 rounded-full object-cover border border-gray-700" />}
               </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">{t.paymentLabel}</label>
-                <div className="flex gap-3">
-                  {["matic", "usdt"].map(p => (
-                    <button key={p} type="button" onClick={() => setPayment(p)}
-                      className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${payment === p ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400 border border-gray-700 hover:border-purple-500"}`}>
-                      {p === "matic" ? t.payMatic : t.payUsdt}
-                    </button>
-                  ))}
+              {isOwner ? (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-purple-500/30 text-center">
+                  <span className="text-purple-300 font-bold text-lg">✨ {lang === "fa" ? "ساخت توکن رایگان (مالک سایت)" : "Free Token Creation (Owner)"}</span>
                 </div>
-              </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-gray-800/50 border border-gray-700 text-center">
+                  <p className="text-sm text-gray-400">{lang === "fa" ? "کارمزد" : "Fee"}: <span className="text-purple-300 font-bold">{maticFee ? (Number(maticFee) / 1e18).toFixed(0) : "25"} MATIC</span></p>
+                </div>
+              )}
               <button type="submit" disabled={minting}
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 font-bold py-4 rounded-xl transition-all text-lg disabled:opacity-50">
                 {minting ? t.minting : t.mintButton}
@@ -385,6 +557,8 @@ export default function App() {
         </Section>
       )}
 
+      {activeTab === "owner" && isOwner && <OwnerSettings maticFee={maticFee} />}
+
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 text-xs text-yellow-300 space-y-2">
           <p className="font-bold">⚠️ {lang === "fa" ? "هشدارهای امنیتی مهم" : "Important Security Warnings"}</p>
@@ -431,5 +605,57 @@ function TokenList() {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function OwnerSettings({ maticFee }) {
+  const { lang } = useLanguage();
+  const [newFee, setNewFee] = useState("");
+  const [saving, setSaving] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+  const currentMatic = maticFee ? Number(maticFee) / 1e18 : 0;
+
+  const handleSave = async () => {
+    if (!newFee || isNaN(newFee) || Number(newFee) <= 0) return;
+    setSaving(true);
+    try {
+      await ensurePolygonNetwork();
+      const feeWei = (BigInt(Math.floor(Number(newFee) * 1e18))).toString();
+      await writeContractAsync({
+        address: FACTORY_ADDR,
+        abi: FACTORY_ABI,
+        functionName: "setFees",
+        args: [feeWei, "0"],
+      });
+      alert(lang === "fa" ? "کارمزد با موفقیت تغییر یافت! صفحه را رفرش کنید." : "Fee updated successfully! Refresh the page.");
+    } catch (err) {
+      alert(err?.shortMessage || err?.message || "Transaction failed");
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Section title={lang === "fa" ? "🔧 تنظیمات مالک سایت" : "🔧 Owner Settings"}>
+      <div className="max-w-lg mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-5">
+        <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+          <p className="text-sm text-gray-400">{lang === "fa" ? "کارمزد فعلی" : "Current Fee"}</p>
+          <p className="text-2xl font-bold text-purple-300">{currentMatic.toFixed(2)} MATIC</p>
+          <p className="text-xs text-gray-500 mt-1">≈ ${(currentMatic * 0.40).toFixed(2)} USD</p>
+        </div>
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">{lang === "fa" ? "کارمزد جدید (MATIC)" : "New Fee (MATIC)"}</label>
+          <input type="number" step="0.1" min="0.1" placeholder="مثلا 12.5" value={newFee}
+            onChange={e => setNewFee(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500" />
+          <p className="text-xs text-gray-500 mt-1">
+            {lang === "fa" ? "5 USD ≈ 12.5 MATIC (با قیمت ~$0.40)" : "5 USD ≈ 12.5 MATIC (at ~$0.40/ POL)"}
+          </p>
+        </div>
+        <button onClick={handleSave} disabled={saving}
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 font-bold py-3 rounded-xl transition-all disabled:opacity-50">
+          {saving ? (lang === "fa" ? "در حال ذخیره..." : "Saving...") : (lang === "fa" ? "💾 ذخیره کارمزد" : "💾 Save Fee")}
+        </button>
+      </div>
+    </Section>
   );
 }

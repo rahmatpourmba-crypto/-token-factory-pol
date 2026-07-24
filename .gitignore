@@ -2,3 +2,9 @@ node_modules/
 .env
 cache/
 artifacts/
+site/dist/
+# Local Netlify folder
+.netlify
+verify-ERC20Template.sol
+scripts/get-impl.cjs
+scripts/set-fee.cjs
