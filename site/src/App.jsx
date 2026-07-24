@@ -256,10 +256,14 @@ export default function App() {
 
       {activeTab === "wallet" && (
         <Section title={t.walletGuide}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
-            {WALLETS.map(w => <WalletCard key={w.id} name={w.name} desc={t[w.descKey]} url={w.url} />)}
-          </div>
           <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-cyan-400 mb-3">{t.networkPolygonTitle}</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-line">{t.networkPolygonDesc}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {WALLETS.map(w => <WalletCard key={w.id} name={w.name} desc={t[w.descKey]} url={w.url} />)}
+            </div>
             <div className="bg-green-900/20 border border-green-600/30 rounded-xl p-5">
               <h3 className="font-bold text-green-400 mb-3">{t.metamaskChromeTitle}</h3>
               <ol className="space-y-2 text-sm text-gray-300">
@@ -272,6 +276,26 @@ export default function App() {
                 {[1,2,3,4].map(i => <li key={i} className="flex gap-3"><span className="text-blue-400 font-bold shrink-0">{i}.</span>{t[`metamaskMobile${i}`]}</li>)}
               </ol>
             </div>
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
+              <h3 className="font-bold text-gray-200 mb-3">{t.howToBuy}</h3>
+              <ol className="space-y-2 text-sm text-gray-300">
+                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">1.</span>{t.exchangeStep1}</li>
+                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">2.</span>{t.exchangeStep2}</li>
+                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">3.</span>{t.exchangeStep3}</li>
+              </ol>
+            </div>
+            <div className="bg-orange-900/20 border border-orange-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-orange-400 mb-3">{t.networkGuide}</h3>
+              <div className="space-y-3">
+                {netDetails.map((d, i) => (
+                  <div key={i} className="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
+                    <span className="text-sm text-gray-400">{d.label}</span>
+                    <code className="text-sm text-purple-300 font-mono text-right">{d.value}</code>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-gray-500">MetaMask → Settings → Networks → Add Network → Fill details above</p>
+            </div>
             <div className="bg-purple-900/20 border border-purple-600/30 rounded-xl p-5">
               <h3 className="font-bold text-purple-400 mb-3">{t.connectGuideTitle}</h3>
               <ol className="space-y-2 text-sm text-gray-300">
@@ -283,10 +307,6 @@ export default function App() {
               <ol className="space-y-2 text-sm text-gray-300">
                 {[1,2,3,4,5,6,7].map(i => <li key={i} className="flex gap-3"><span className="text-amber-400 font-bold shrink-0">{i}.</span>{t[`receiveStep${i}`]}</li>)}
               </ol>
-            </div>
-            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-cyan-400 mb-3">{t.networkPolygonTitle}</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-line">{t.networkPolygonDesc}</p>
             </div>
             <div className="bg-red-900/20 border border-red-600/30 rounded-xl p-4">
               <p className="text-sm text-red-300">{t.walletNote}</p>
