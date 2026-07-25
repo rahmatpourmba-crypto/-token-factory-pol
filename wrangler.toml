@@ -1,5 +1,6 @@
 name = "ploymint"
 compatibility_date = "2026-07-25"
+command = "cd site && npm install && npm run build"
 
 [assets]
 directory = "./site/dist"
