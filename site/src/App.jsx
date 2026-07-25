@@ -249,6 +249,8 @@ export default function App() {
   const [minting, setMinting] = useState(false);
   const [createdToken, setCreatedToken] = useState(null);
   const [activeTab, setActiveTab] = useState("create");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     document.documentElement.dir = dir;
@@ -396,8 +398,33 @@ export default function App() {
                   <p className="text-sm text-gray-400">{lang === "fa" ? "کارمزد" : "Fee"}: <span className="text-purple-300 font-bold">{maticFee ? (Number(maticFee) / 1e18).toFixed(0) : "25"} MATIC</span></p>
                 </div>
               )}
-              <button type="submit" disabled={minting}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 font-bold py-4 rounded-xl transition-all text-lg disabled:opacity-50">
+              <div className="border-t border-gray-700 pt-4 mt-2">
+                <button type="button" onClick={() => setShowTerms(!showTerms)}
+                  className="text-xs text-purple-400 hover:text-purple-300 underline mb-2">
+                  {lang === "fa" ? "مطالعه شرایط" : "Read Terms"} {showTerms ? "▲" : "▼"}
+                </button>
+                {showTerms && (
+                  <div className="bg-gray-900/80 border border-gray-700 rounded-xl p-4 mb-3 text-xs leading-6 text-gray-300 space-y-2">
+                    <p>با ساخت توکن در این سایت، من تایید می‌کنم که:</p>
+                    <p>۱. این سایت صرفاً یک <strong className="text-white">ابزار فنی</strong> برای ساخت قرارداد هوشمند (توکن) روی شبکه پالیگان است و هیچ ادعای مالی، سرمایه‌گذاری یا تضمین سودی ارائه نمی‌دهد.</p>
+                    <p>۲. مسئولیت کامل استفاده از توکن ساخته‌شده — از جمله تبلیغات، فروش، ادعاهای مالی به دیگران، ایجاد نقدینگی و لیست شدن در صرافی‌ها — بر عهده‌ی من است.</p>
+                    <p>۳. اطلاعات وارد‌شده (نام، نماد، عرضه کل) پس از ساخت <strong className="text-white">قابل تغییر نیست</strong>، چون روی بلاکچین ثبت می‌شود، و مسئولیت درست بودن این اطلاعات با من است.</p>
+                    <p>۴. کارمزد نمایش داده‌شده در همین لحظه را بررسی کرده‌ام و می‌دانم این مبلغ ممکن است در آینده تغییر کند.</p>
+                    <p>۵. تراکنش‌های بلاکچین <strong className="text-white">غیرقابل بازگشت</strong> هستند و در صورت وارد کردن اشتباه اطلاعات یا آدرس، این سایت هیچ مسئولیتی در بازگرداندن وجه یا توکن ندارد.</p>
+                    <p>۶. متوجه‌ام که هرگز نباید عبارت بازیابی (Seed Phrase) یا کلید خصوصی کیف پول خود را با هیچ‌کس، از جمله این سایت، به اشتراک بگذارم.</p>
+                    <p className="text-purple-300 font-bold pt-1">با تیک زدن این گزینه و کلیک روی «ساخت توکن»، مسئولیت کامل این اقدام را می‌پذیرم.</p>
+                  </div>
+                )}
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
+                    className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500 cursor-pointer" />
+                  <span className="text-sm text-gray-300 leading-relaxed">
+                    {lang === "fa" ? "شرایط و مسئولیت‌های زیر را مطالعه کردم و می‌پذیرم." : "I have read and accept the terms and responsibilities below."}
+                  </span>
+                </label>
+              </div>
+              <button type="submit" disabled={minting || !termsAccepted}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 font-bold py-4 rounded-xl transition-all text-lg disabled:opacity-50 disabled:cursor-not-allowed">
                 {minting ? t.minting : t.mintButton}
               </button>
             </form>
