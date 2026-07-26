@@ -348,6 +348,7 @@ export default function App() {
           { id: "dex", label: t.liquidity },
           { id: "tokens", label: t.tokensList },
           ...(isOwner ? [{ id: "owner", label: "🔧 Owner" }] : []),
+          { id: "tutorial", label: t.tutorialTab },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}>
@@ -558,6 +559,123 @@ export default function App() {
       )}
 
       {activeTab === "owner" && isOwner && <OwnerSettings maticFee={maticFee} />}
+
+      {activeTab === "tutorial" && (
+        <Section title={t.tutorialTitle}>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
+              <p className="text-sm text-gray-300">{t.tutorialIntro}</p>
+            </div>
+
+            <div className="bg-green-900/20 border border-green-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-green-400 mb-2">{t.t1Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t1Desc}</p>
+              <p className="text-sm text-green-300 font-bold mb-2">{t.t1SubA}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-4">
+                {[1,2,3,4,5,6].map(i => <li key={i} className="flex gap-2"><span className="text-green-400 font-bold shrink-0">{i}.</span>{t[`t1A${i}`]}</li>)}
+              </ol>
+              <p className="text-sm text-blue-300 font-bold mb-2">{t.t1SubB}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3].map(i => <li key={i} className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">{i}.</span>{t[`t1B${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-400">{t.t1Wallets}</p>
+            </div>
+
+            <div className="bg-orange-900/20 border border-orange-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-orange-400 mb-2">{t.t2Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t2Desc}</p>
+              <p className="text-sm text-gray-400 mb-2">{t.t2How}</p>
+              <div className="space-y-2">
+                {[{ l: t.t2Name, v: t.t2NameV }, { l: t.t2Rpc, v: t.t2RpcV }, { l: t.t2Chain, v: t.t2ChainV }, { l: t.t2Symbol, v: t.t2SymbolV }, { l: t.t2Explorer, v: t.t2ExplorerV }].map((d, i) => (
+                  <div key={i} className="flex justify-between items-center py-1 border-b border-gray-700 last:border-0">
+                    <span className="text-sm text-gray-400">{d.l}</span>
+                    <code className="text-sm text-orange-300 font-mono">{d.v}</code>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">{t.t2Note}</p>
+            </div>
+
+            <div className="bg-purple-900/20 border border-purple-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-purple-400 mb-2">{t.t3Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t3Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`t3Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">{t.t3Note}</p>
+            </div>
+
+            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-cyan-400 mb-2">{t.t4Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t4Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-cyan-400 font-bold shrink-0">{i}.</span>{t[`t4Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-500">{t.t4Note}</p>
+            </div>
+
+            <div className="bg-pink-900/20 border border-pink-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-pink-400 mb-2">{t.t5Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t5Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5,6,7,8].map(i => <li key={i} className="flex gap-2"><span className="text-pink-400 font-bold shrink-0">{i}.</span>{t[`t5Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">{t.t5Note}</p>
+            </div>
+
+            <div className="bg-amber-900/20 border border-amber-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-amber-400 mb-2">{t.t6Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t6Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5,6,7].map(i => <li key={i} className="flex gap-2"><span className="text-amber-400 font-bold shrink-0">{i}.</span>{t[`t6Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-500">{t.t6Note}</p>
+            </div>
+
+            <div className="bg-blue-900/20 border border-blue-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-blue-400 mb-2">{t.t7Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t7Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5,6,7,8,9,10].map(i => <li key={i} className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">{i}.</span>{t[`t7Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-500">{t.t7Note}</p>
+            </div>
+
+            <div className="bg-indigo-900/20 border border-indigo-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-indigo-400 mb-2">{t.t8Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t8Desc}</p>
+              <p className="text-sm text-indigo-300 font-bold mb-1">{t.t8BuyTitle}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3].map(i => <li key={i} className="flex gap-2"><span className="text-indigo-400 font-bold shrink-0">{i}.</span>{t[`t8Buy${i}`]}</li>)}
+              </ol>
+              <p className="text-sm text-indigo-300 font-bold mb-1">{t.t8SellTitle}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-indigo-400 font-bold shrink-0">{i}.</span>{t[`t8Sell${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-500">{t.t8Note}</p>
+            </div>
+
+            <div className="bg-emerald-900/20 border border-emerald-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-emerald-400 mb-2">{t.t9Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t9Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-emerald-400 font-bold shrink-0">{i}.</span>{t[`t9Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-500">{t.t9Note}</p>
+            </div>
+
+            <div className="bg-red-900/20 border border-red-600/30 rounded-xl p-5">
+              <h3 className="font-bold text-red-400 mb-2">{t.tutorialWarning}</h3>
+              <ul className="space-y-1 text-sm text-gray-300">
+                <li className="flex gap-2"><span className="text-red-400">⚠️</span>{t.tutorialWarn1}</li>
+                <li className="flex gap-2"><span className="text-red-400">⚠️</span>{t.tutorialWarn2}</li>
+                <li className="flex gap-2"><span className="text-red-400">⚠️</span>{t.tutorialWarn3}</li>
+                <li className="flex gap-2"><span className="text-red-400">⚠️</span>{t.tutorialWarn4}</li>
+              </ul>
+            </div>
+          </div>
+        </Section>
+      )}
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 text-xs text-yellow-300 space-y-2">
