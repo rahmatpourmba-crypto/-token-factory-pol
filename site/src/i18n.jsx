@@ -1243,12 +1243,12 @@ const DE = {
   },
 };
 
-const LANGS = { fa: FA, en: EN, ar: AR, ku: KU, zh: ZH, hi: HI, ms: MS, de: DE };
+const LANGS = { en: EN, ar: AR, fa: FA, ku: KU, zh: ZH, hi: HI, ms: MS, de: DE };
 
 const LanguageContext = createContext(null);
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState("fa");
+  const [lang, setLang] = useState("en");
   const value = {
     lang, setLang,
     dir: LANGS[lang].dir,
