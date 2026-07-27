@@ -554,7 +554,7 @@ export default function App() {
 
       {activeTab === "tokens" && (
         <Section title={t.tokensList}>
-          <TokenList />
+          <TokenList key={createdToken?.address || "none"} />
         </Section>
       )}
 
