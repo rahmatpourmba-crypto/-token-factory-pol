@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
-import { waitForTransactionReceipt } from 'wagmi/actions';
+import { waitForTransactionReceipt, getPublicClient } from 'wagmi/actions';
 import { polygon } from 'wagmi/chains';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useLanguage } from "./i18n.jsx";
@@ -541,7 +541,7 @@ export default function App() {
 
       {activeTab === "tokens" && (
         <Section title={t.tokensList}>
-          <TokenList key={createdToken?.address || "none"} />
+          <TokenList />
         </Section>
       )}
 
@@ -679,8 +679,61 @@ export default function App() {
 }
 
 function TokenList() {
-  const { t } = useLanguage();
-  const [tokens] = useState(() => JSON.parse(localStorage.getItem("deployedTokens") || "[]"));
+  const { t, lang } = useLanguage();
+  const { address, isConnected } = useAccount();
+  const config = useConfig();
+  const [tokens, setTokens] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setTokens([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const TOKEN_CREATED_TOPIC = "0x6bbf6b425f827619d9ed2012826973c1f03decdfa91aa03d3c882cad1e650321";
+        const creatorTopic = "0x000000000000000000000000" + address.slice(2).toLowerCase();
+        const client = await getPublicClient(config, { chainId: polygon.id });
+        const logs = await client.getLogs({
+          address: FACTORY_ADDR,
+          event: {
+            type: 'event',
+            name: 'TokenCreated',
+            inputs: [
+              { type: 'address', name: 'creator', indexed: true },
+              { type: 'address', name: 'tokenAddress', indexed: true },
+              { type: 'string', name: 'name', indexed: false },
+              { type: 'string', name: 'symbol', indexed: false },
+              { type: 'uint256', name: 'totalSupply', indexed: false },
+              { type: 'string', name: 'paymentMethod', indexed: false },
+            ],
+          },
+          args: { creator: address },
+          fromBlock: 0n,
+        });
+        if (cancelled) return;
+        const found = logs.map((log) => ({
+          tokenAddress: log.args.tokenAddress,
+          name: log.args.name,
+          symbol: log.args.symbol,
+          totalSupply: (Number(log.args.totalSupply) / 1e18).toLocaleString(),
+        }));
+        setTokens(found);
+      } catch (err) {
+        console.error("Failed to fetch tokens from blockchain:", err);
+        const local = JSON.parse(localStorage.getItem("deployedTokens") || "[]");
+        if (!cancelled) setTokens(local);
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [address, isConnected, config]);
+
+  if (!isConnected) return <p className="text-center text-gray-500">{t.connectFirst || "Please connect your wallet first"}</p>;
+  if (loading) return <p className="text-center text-gray-500">{lang === "fa" ? "در حال بارگذاری..." : "Loading..."}</p>;
   if (tokens.length === 0) return <p className="text-center text-gray-500">{t.noTokens}</p>;
   return (
     <div className="overflow-x-auto max-w-3xl mx-auto">
