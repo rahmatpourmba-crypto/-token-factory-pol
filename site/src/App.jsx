@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
+import { useAccount, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
 import { waitForTransactionReceipt } from 'wagmi/actions';
 import { polygon } from 'wagmi/chains';
-import { injected } from 'wagmi/connectors';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useLanguage } from "./i18n.jsx";
 
 const FACTORY_ADDR = "0x5f9ad349Fc40DeE22f23801238489F17951B0843";
@@ -153,14 +153,11 @@ const AGGREGATORS = [
 function NavBar() {
   const { t, lang, setLang } = useLanguage();
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
   const onWrongChain = isConnected && chainId !== polygon.id;
   const langs = [
-    { code: "fa", label: "فارسی" }, { code: "en", label: "English" },
-    { code: "ar", label: "العربية" }, { code: "ku", label: "کوردی" },
+    { code: "en", label: "English" }, { code: "ar", label: "العربية" },
+    { code: "fa", label: "فارسی" }, { code: "ku", label: "کوردی" },
     { code: "zh", label: "中文" }, { code: "hi", label: "हिन्दी" },
     { code: "ms", label: "Melayu" }, { code: "de", label: "Deutsch" },
   ];
@@ -168,23 +165,13 @@ function NavBar() {
     <nav className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-gray-800">
       <Logo />
       <div className="flex items-center gap-3">
-        {onWrongChain ? (
+        {onWrongChain && (
           <button onClick={ensurePolygonNetwork}
             className="bg-red-600 hover:bg-red-700 rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap">
             ⚠ Switch to Polygon
           </button>
-        ) : isConnected ? (
-          <button onClick={() => disconnect()}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 rounded-lg px-3 py-2 text-sm font-medium transition-all">
-            <span className="w-2 h-2 rounded-full bg-green-400" />
-            <span>{address.slice(0, 6)}...{address.slice(-4)}</span>
-          </button>
-        ) : (
-          <button onClick={async () => { await connect({ connector: injected() }); await new Promise(r => setTimeout(r, 800)); await ensurePolygonNetwork(); }}
-            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">
-            Connect Wallet
-          </button>
         )}
+        <ConnectButton chainStatus="none" showBalance={false} />
         <select value={lang} onChange={(e) => setLang(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer focus:outline-none focus:border-purple-500">
           {langs.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}

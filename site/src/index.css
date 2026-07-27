@@ -1,1 +1,25 @@
 ﻿@import "tailwindcss";
+
+:root {
+  --rk-accent-color: #9333ea;
+  --rk-accent-color-hover: #7e22ce;
+  --rk-modal-background: #111827;
+  --rk-modal-border: #1f2937;
+  --rk-modal-box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --rk-connectedButton-color: #7c3aed;
+  --rk-connectedButton-color-hover: #6d28d9;
+  --rk-connectedButton-chain-background: #1f2937;
+  --rk-connectButton-background: #7c3aed;
+  --rk-connectButton-background-hover: #6d28d9;
+  --rk-connectButton-text: #ffffff;
+  --rk-connectButton-text-hover: #ffffff;
+  --rk-general-color: #ffffff;
+  --rk-overlay-background: rgba(0, 0, 0, 0.7);
+  --rk-option-hover-background: #1f2937;
+  --rk-recent-badge-color: #9333ea;
+  --rk-error-color: #ef4444;
+}
+
+[data-rk] .rk-connector-icon {
+  border-radius: 0.5rem;
+}
