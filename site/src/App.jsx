@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useAccount, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
+import { useAccount, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig, useConnect } from 'wagmi';
 import { waitForTransactionReceipt, getPublicClient } from 'wagmi/actions';
 import { polygon } from 'wagmi/chains';
+import { injected } from 'wagmi/connectors';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useLanguage } from "./i18n.jsx";
 
@@ -153,7 +154,9 @@ const AGGREGATORS = [
 function NavBar() {
   const { t, lang, setLang } = useLanguage();
   const { address, isConnected } = useAccount();
+  const { connectAsync } = useConnect();
   const chainId = useChainId();
+  const isTrustBrowser = typeof window !== 'undefined' && window.ethereum?.isTrust;
   const onWrongChain = isConnected && chainId !== polygon.id;
   const langs = [
     { code: "en", label: "English" }, { code: "ar", label: "العربية" },
@@ -171,7 +174,18 @@ function NavBar() {
             ⚠ Switch to Polygon
           </button>
         )}
-        <ConnectButton chainStatus="none" showBalance={false} />
+        {isTrustBrowser ? (
+          isConnected ? (
+            <span className="bg-gray-800 rounded-lg px-3 py-2 text-sm font-mono text-gray-300">{address.slice(0,6)}...{address.slice(-4)}</span>
+          ) : (
+            <button onClick={() => connectAsync({ connector: injected() })}
+              className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap">
+              Connect Wallet
+            </button>
+          )
+        ) : (
+          <ConnectButton chainStatus="none" showBalance={false} />
+        )}
         <select value={lang} onChange={(e) => setLang(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer focus:outline-none focus:border-purple-500">
           {langs.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}

@@ -18,7 +18,7 @@ const config = getDefaultConfig({
   wallets: [
     {
       groupName: 'Popular',
-      wallets: [trustWallet({ preferInjected: true }), injectedWallet, metaMaskWallet, coinbaseWallet, walletConnectWallet],
+      wallets: [trustWallet, injectedWallet, metaMaskWallet, coinbaseWallet, walletConnectWallet],
     },
   ],
 });
