@@ -3,7 +3,6 @@ import '@rainbow-me/rainbowkit/styles.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { metaMaskWallet, trustWallet, coinbaseWallet, walletConnectWallet, injectedWallet } from '@rainbow-me/rainbowkit/wallets';
 import { WagmiProvider } from 'wagmi';
 import { polygon } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
@@ -15,12 +14,6 @@ const config = getDefaultConfig({
   projectId: '3a8170812b534d0ff9d794f19a901d84',
   chains: [polygon],
   ssr: false,
-  wallets: [
-    {
-      groupName: 'Popular',
-      wallets: [trustWallet, injectedWallet, metaMaskWallet, coinbaseWallet, walletConnectWallet],
-    },
-  ],
 });
 const queryClient = new QueryClient();
 
