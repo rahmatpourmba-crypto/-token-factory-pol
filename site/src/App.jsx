@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useAccount, useDisconnect, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useWriteContract, useReadContract, useSwitchChain, useChainId, useConfig } from 'wagmi';
 import { waitForTransactionReceipt, getPublicClient } from 'wagmi/actions';
 import { polygon } from 'wagmi/chains';
-import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { useLanguage } from "./i18n.jsx";
 
 const FACTORY_ADDR = "0x5f9ad349Fc40DeE22f23801238489F17951B0843";
@@ -80,15 +79,6 @@ function Logo() {
   );
 }
 
-function WalletCard({ name, desc, url }) {
-  return (
-    <a href={url} target="_blank" rel="noreferrer" className="block p-4 rounded-xl border border-gray-700 bg-gray-800/50 hover:border-purple-500 hover:bg-gray-800 transition-all group">
-      <div className="font-bold text-purple-400 group-hover:text-purple-300">{name}</div>
-      <div className="text-xs text-gray-400 mt-1">{desc}</div>
-    </a>
-  );
-}
-
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   const { t } = useLanguage();
@@ -150,24 +140,94 @@ const AGGREGATORS = [
   { name: "CoinMarketCap", url: "https://coinmarketcap.com/listing/" },
 ];
 
-function NavBar() {
+function NavBar({ manualAddress, setManualAddress }) {
   const { t, lang, setLang } = useLanguage();
   const { address, isConnected } = useAccount();
-  const { openConnectModal } = useConnectModal();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const onWrongChain = isConnected && chainId !== polygon.id;
-
-  useEffect(() => {
-    if (isConnected) ensurePolygonNetwork();
-  }, [isConnected]);
-
+  const [showWallets, setShowWallets] = useState(false);
+  const [showPasteInput, setShowPasteInput] = useState(false);
+  const [pasteValue, setPasteValue] = useState("");
+  const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+  const isWalletBrowser = typeof navigator !== "undefined" && /TrustWallet|WalletConnect|MetaMask/i.test(navigator.userAgent);
+  const hasInjected = typeof window !== "undefined" && (window.ethereum || window.trustWallet || isWalletBrowser);
   const langs = [
     { code: "en", label: "English" }, { code: "ar", label: "العربية" },
     { code: "fa", label: "فارسی" }, { code: "ku", label: "کوردی" },
     { code: "zh", label: "中文" }, { code: "hi", label: "हिन्दी" },
     { code: "ms", label: "Melayu" }, { code: "de", label: "Deutsch" },
   ];
+  const effectiveAddr = address || manualAddress;
+  const effectiveConnected = isConnected || !!manualAddress;
+
+  const handlePasteConnect = () => {
+    const a = pasteValue.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(a)) { alert(lang === "fa" ? "آدرس کیف پول معتبر نیست" : "Invalid wallet address"); return; }
+    setManualAddress(a);
+    localStorage.setItem("manualAddr", a);
+    setShowWallets(false);
+    setShowPasteInput(false);
+    setPasteValue("");
+  };
+
+  const handleDisconnect = () => {
+    if (manualAddress) {
+      setManualAddress("");
+      localStorage.removeItem("manualAddr");
+    } else {
+      disconnect();
+    }
+  };
+
+  const handleConnect = async () => {
+    setShowWallets(false);
+    let p = window.ethereum || window.trustWallet;
+    // Some wallets inject provider late — poll up to 3s
+    if (!p) {
+      for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 200));
+        p = window.ethereum || window.trustWallet;
+        if (p) break;
+      }
+    }
+    // EIP-6963 standard provider discovery
+    if (!p) {
+      try {
+        p = await new Promise(r => {
+          let done = false;
+          const h = (e) => { done = true; window.removeEventListener('eip6963:announceProvider', h); r(e.detail.provider); };
+          window.addEventListener('eip6963:announceProvider', h);
+          window.dispatchEvent(new Event('eip6963:requestProvider'));
+          setTimeout(() => { if (!done) { window.removeEventListener('eip6963:announceProvider', h); r(null); } }, 2000);
+        });
+      } catch {}
+    }
+    if (p) {
+      try {
+        const accts = await p.request({ method: "eth_requestAccounts" });
+        if (accts?.[0]) { window.location.reload(); return; }
+      } catch (e) {
+        if (e?.code === 4001) return;
+      }
+    }
+    try {
+      await connect({ connector: connectors.find(c => c.id === "injected") });
+      await new Promise(r => setTimeout(r, 800));
+      await ensurePolygonNetwork();
+    } catch (e) {
+      if (e?.code === 4001) return;
+    }
+  };
+
+  const MOBILE_WALLETS = [
+    { id: "metamask", name: "MetaMask", icon: "🦊", url: "https://metamask.app.link/dapp/ploymint.polyganfactorytoken.workers.dev" },
+    { id: "trust", name: "Trust Wallet", icon: "🔵", url: "https://link.trustwallet.com/open_url?url=https%3A%2F%2Fploymint.polyganfactorytoken.workers.dev" },
+    { id: "phantom", name: "Phantom", icon: "👻", url: "https://phantom.app/ul/browse/https://ploymint.polyganfactorytoken.workers.dev" },
+    { id: "rainbow", name: "Rainbow", icon: "🌈", url: "https://rnbw.app/dapp/ploymint.polyganfactorytoken.workers.dev" },
+  ];
+
   return (
     <nav className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-gray-800">
       <Logo />
@@ -178,18 +238,78 @@ function NavBar() {
             ⚠ Switch to Polygon
           </button>
         )}
-        {isConnected ? (
-          <button onClick={() => disconnect()}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 rounded-lg px-3 py-2 text-sm font-medium transition-all">
-            <span className="w-2 h-2 rounded-full bg-green-400" />
-            {address.slice(0,4)}...{address.slice(-4)}
-          </button>
-        ) : (
-          <button onClick={openConnectModal}
-            className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">
-            {t("connectWallet")}
+        <div className="flex flex-col items-end gap-1">
+          {effectiveConnected ? (
+            <button onClick={handleDisconnect}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 rounded-lg px-3 py-2 text-sm font-medium transition-all">
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+              {manualAddress ? "📋" : ""} {effectiveAddr.slice(0,4)}...{effectiveAddr.slice(-4)}
+            </button>
+          ) : (
+            <div className="relative">
+              <button onClick={() => setShowWallets(!showWallets)}
+                className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">
+                {t.connectWallet}
+              </button>
+            {showWallets && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                {hasInjected && (
+                  <button onClick={handleConnect}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 text-sm text-left transition-all">
+                    <span className="text-xl">🦊</span>
+                    <div>
+                      <div className="font-medium text-white">Browser Wallet</div>
+                      <div className="text-xs text-gray-400">MetaMask, Trust Wallet, etc.</div>
+                    </div>
+                  </button>
+                )}
+                <button onClick={() => setShowPasteInput(!showPasteInput)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 text-sm text-left transition-all">
+                  <span className="text-xl">📋</span>
+                  <div>
+                    <div className="font-medium text-white">{lang === "fa" ? "ورود با آدرس" : "Enter Address"}</div>
+                    <div className="text-xs text-gray-400">{lang === "fa" ? "برای مرور بدون کیف پول" : "Browse without wallet"}</div>
+                  </div>
+                </button>
+                {showPasteInput && (
+                  <div className="px-4 pb-3">
+                    <input type="text" value={pasteValue} onChange={e => setPasteValue(e.target.value)}
+                      placeholder="0x..."
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white mb-2 focus:outline-none focus:border-purple-500 font-mono" />
+                    <button onClick={handlePasteConnect}
+                      className="w-full bg-purple-600 hover:bg-purple-700 rounded-lg py-2 text-sm font-medium transition-all">
+                      {lang === "fa" ? "اتصال" : "Connect"}
+                    </button>
+                  </div>
+                )}
+                {isMobile && (
+                  <>
+                    <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-500 text-center">
+                      {lang === "fa" ? "باز کردن در اپ والت:" : "Open in wallet app:"}
+                    </div>
+                    {MOBILE_WALLETS.map(w => (
+                      <a key={w.id} href={w.url} rel="noreferrer"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 text-sm text-left transition-all">
+                        <span className="text-xl">{w.icon}</span>
+                        <div>
+                          <div className="font-medium text-white">{w.name}</div>
+                          <div className="text-xs text-gray-400">{lang === "fa" ? "باز شدن در والت" : "Opens in wallet"}</div>
+                        </div>
+                      </a>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {!effectiveConnected && (
+          <button onClick={() => { setShowWallets(true); setShowPasteInput(true); }}
+            className="text-[10px] text-purple-400/80 hover:text-purple-300 underline max-w-[220px] text-right leading-tight rtl:text-right ltr:text-left">
+            {t.pastePrompt}
           </button>
         )}
+        </div>
         <select value={lang} onChange={(e) => setLang(e.target.value)}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white cursor-pointer focus:outline-none focus:border-purple-500">
           {langs.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
@@ -244,13 +364,18 @@ export default function App() {
   const { writeContractAsync, isPending } = useWriteContract();
   const { data: ownerAddr } = useReadContract({ config, chainId: polygon.id, address: FACTORY_ADDR, abi: FACTORY_ABI, functionName: "owner" });
   const { data: maticFee } = useReadContract({ config, chainId: polygon.id, address: FACTORY_ADDR, abi: FACTORY_ABI, functionName: "feeInMatic" });
-  const isOwner = isConnected && address && ownerAddr && address.toLowerCase() === ownerAddr.toLowerCase();
+  const [manualAddress, setManualAddress] = useState(() => localStorage.getItem("manualAddr") || "");
+  const effectiveAddr = address || manualAddress;
+  const effectiveConnected = isConnected || !!manualAddress;
+  const isOwner = (address || manualAddress) && ownerAddr && (address || manualAddress).toLowerCase() === ownerAddr.toLowerCase();
 
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
   const [tokenSupply, setTokenSupply] = useState("");
   const [tokenLogo, setTokenLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+  const [aiStyle, setAiStyle] = useState("cinematic");
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [minting, setMinting] = useState(false);
   const [createdToken, setCreatedToken] = useState(null);
   const [activeTab, setActiveTab] = useState("create");
@@ -266,9 +391,34 @@ export default function App() {
     }
   }, [isConnected, chainId]);
 
+  const handleAiLogo = async () => {
+    if (!tokenName || !tokenSymbol) {
+      alert(lang === "fa" ? "ابتدا نام و نماد توکن را وارد کنید" : "Please enter token name & symbol first");
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const res = await fetch("/api/logo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: tokenName, symbol: tokenSymbol, style: aiStyle }),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const file = new File([blob], "ai-logo.png", { type: "image/png" });
+      setTokenLogo(file);
+      setLogoPreview(url);
+    } catch (err) {
+      alert(t.aiLogoError || "Logo generation failed. Please try again.");
+    }
+    setAiGenerating(false);
+  };
+
   const handleMint = async (e) => {
     e.preventDefault();
     if (!tokenName || !tokenSymbol || !tokenSupply) return;
+    if (manualAddress) { alert(lang === "fa" ? "برای ساخت توکن به کیف پول نیاز دارید. از دسکتاپ با MetaMask استفاده کنید." : "Wallet required to create tokens. Use desktop with MetaMask."); return; }
     if (!isConnected) { alert(t.connectFirst || "Please connect your wallet first"); return; }
     setMinting(true);
     try {
@@ -336,13 +486,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <NavBar />
+      <NavBar manualAddress={manualAddress} setManualAddress={setManualAddress} />
       <div className="text-center py-16 px-4 bg-gradient-to-b from-purple-900/10 to-transparent">
         <h1 className="text-3xl sm:text-5xl font-bold mb-4">
           {t.heroTitle} <span className="text-purple-400 italic">{t.heroTitleAccent}</span>
         </h1>
         <p className="text-gray-400 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">{t.heroBody}</p>
       </div>
+
+      <Stats />
 
       <div className="flex justify-center gap-2 mb-8 px-4 flex-wrap">
         {[
@@ -354,6 +506,7 @@ export default function App() {
           { id: "tokens", label: t.tokensList },
           ...(isOwner ? [{ id: "owner", label: "🔧 Owner" }] : []),
           { id: "tutorial", label: t.tutorialTab },
+          { id: "articles", label: t.articlesTab },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}>
@@ -386,6 +539,22 @@ export default function App() {
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">{t.tokenLogo}</label>
+                <div className="flex gap-2 mb-3">
+                  <select value={aiStyle} onChange={e => setAiStyle(e.target.value)}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 cursor-pointer">
+                    <option value="cinematic">{t.aiStyleCinematic}</option>
+                    <option value="minimal">{t.aiStyleMinimal}</option>
+                    <option value="neon">{t.aiStyleNeon}</option>
+                    <option value="gold">{t.aiStyleGold}</option>
+                    <option value="cartoon">{t.aiStyleCartoon}</option>
+                    <option value="space">{t.aiStyleSpace}</option>
+                  </select>
+                  <button type="button" onClick={handleAiLogo} disabled={aiGenerating}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 whitespace-nowrap">
+                    {aiGenerating ? t.aiLogoGenerating : t.aiLogoButton}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">{t.aiLogoHint}</p>
                 <input type="file" accept="image/*" onChange={e => {
                   const f = e.target.files[0];
                   if (f) { setTokenLogo(f); setLogoPreview(URL.createObjectURL(f)); }
@@ -420,12 +589,39 @@ export default function App() {
                   <code className="flex-1 text-xs sm:text-sm font-mono text-purple-300 break-all select-all">{createdToken.address}</code>
                   <CopyButton text={createdToken.address} />
                 </div>
-                <div className="mt-3 flex gap-2 flex-wrap">
-                  <a href={`${createdToken.explorer}/token/${createdToken.address}`} target="_blank" rel="noreferrer"
-                    className="text-sm text-blue-400 hover:text-blue-300 underline">{t.viewPoly} ↗</a>
-                  <span className="text-sm text-gray-500">|</span>
-                  <span className="text-sm text-gray-400">{t.addWalletGuide}</span>
+                <div className="flex gap-2 mt-4">
+                  <a href={`${createdToken.explorer}/address/${createdToken.address}`} target="_blank" rel="noreferrer"
+                    className="flex-1 text-center bg-purple-600 hover:bg-purple-700 rounded-lg py-2 text-sm font-medium transition-all">{t.viewOnExplorer}</a>
                 </div>
+                {createdToken.name && createdToken.symbol && (
+                  <div className="mt-5 pt-4 border-t border-gray-700">
+                    <p className="text-sm font-bold text-purple-300 mb-1">🚀 {t.shareTitle}</p>
+                    <p className="text-xs text-gray-500 mb-3">{t.shareDesc}</p>
+                    {(() => {
+                      const site = "https://ploymint.polyganfactorytoken.workers.dev/";
+                      const msg = `I just created my own crypto token ${createdToken.name} (${createdToken.symbol}) on Polygon with PolyMint — no coding needed! 🚀`;
+                      const btns = [
+                        { icon: "✈️", name: "Telegram", cls: "bg-sky-600 hover:bg-sky-500", href: `https://t.me/share/url?url=${encodeURIComponent(site)}&text=${encodeURIComponent(msg)}` },
+                        { icon: "💬", name: "WhatsApp", cls: "bg-green-600 hover:bg-green-500", href: `https://wa.me/?text=${encodeURIComponent(msg + " " + site)}` },
+                        { icon: "𝕏", name: "X", cls: "bg-gray-900 hover:bg-gray-800 border border-gray-700", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(msg)}&url=${encodeURIComponent(site)}` },
+                      ];
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          {btns.map(b => (
+                            <a key={b.name} href={b.href} target="_blank" rel="noopener noreferrer"
+                              className={`flex-1 min-w-[100px] text-center ${b.cls} rounded-lg py-2 text-sm font-semibold transition-all`}>
+                              {b.icon} {b.name}
+                            </a>
+                          ))}
+                          <button onClick={() => navigator.clipboard?.writeText(site).then(() => alert(lang === "fa" ? "لینک کپی شد" : "Link copied"))}
+                            className="flex-1 min-w-[100px] text-center bg-gray-700 hover:bg-gray-600 rounded-lg py-2 text-sm font-semibold transition-all">
+                            📋 {lang === "fa" ? "کپی لینک" : "Copy Link"}
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -433,123 +629,80 @@ export default function App() {
       )}
 
       {activeTab === "wallet" && (
-        <Section title={t.walletGuide}>
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-cyan-400 mb-3">{t.networkPolygonTitle}</h3>
-              <p className="text-sm text-gray-300 whitespace-pre-line">{t.networkPolygonDesc}</p>
-            </div>
+        <Section id="wallet" title={t.walletGuide}>
+          <div className="max-w-2xl mx-auto space-y-4">
+            <p className="text-gray-400 text-sm leading-relaxed">{t.walletDesc}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {WALLETS.map(w => <WalletCard key={w.id} name={w.name} desc={t[w.descKey]} url={w.url} />)}
-            </div>
-            <div className="bg-green-900/20 border border-green-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-green-400 mb-3">{t.metamaskChromeTitle}</h3>
-              <ol className="space-y-2 text-sm text-gray-300">
-                {[1,2,3,4,5,6].map(i => <li key={i} className="flex gap-3"><span className="text-green-400 font-bold shrink-0">{i}.</span>{t[`metamaskChrome${i}`]}</li>)}
-              </ol>
-            </div>
-            <div className="bg-blue-900/20 border border-blue-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-blue-400 mb-3">{t.metamaskMobileTitle}</h3>
-              <ol className="space-y-2 text-sm text-gray-300">
-                {[1,2,3,4].map(i => <li key={i} className="flex gap-3"><span className="text-blue-400 font-bold shrink-0">{i}.</span>{t[`metamaskMobile${i}`]}</li>)}
-              </ol>
-            </div>
-            <div className="bg-gray-900 border border-gray-700 rounded-xl p-5">
-              <h3 className="font-bold text-gray-200 mb-3">{t.howToBuy}</h3>
-              <ol className="space-y-2 text-sm text-gray-300">
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">1.</span>{t.exchangeStep1}</li>
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">2.</span>{t.exchangeStep2}</li>
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">3.</span>{t.exchangeStep3}</li>
-              </ol>
-            </div>
-            <div className="bg-orange-900/20 border border-orange-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-orange-400 mb-3">{t.networkGuide}</h3>
-              <div className="space-y-3">
-                {netDetails.map((d, i) => (
-                  <div key={i} className="flex justify-between items-center py-2 border-b border-gray-700 last:border-0">
-                    <span className="text-sm text-gray-400">{d.label}</span>
-                    <code className="text-sm text-purple-300 font-mono text-right">{d.value}</code>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 text-xs text-gray-500">MetaMask → Settings → Networks → Add Network → Fill details above</p>
-            </div>
-            <div className="bg-purple-900/20 border border-purple-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-purple-400 mb-3">{t.connectGuideTitle}</h3>
-              <ol className="space-y-2 text-sm text-gray-300">
-                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`connectStep${i}`]}</li>)}
-              </ol>
-            </div>
-            <div className="bg-amber-900/20 border border-amber-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-amber-400 mb-3">{t.receiveTokenTitle}</h3>
-              <ol className="space-y-2 text-sm text-gray-300">
-                {[1,2,3,4,5,6,7].map(i => <li key={i} className="flex gap-3"><span className="text-amber-400 font-bold shrink-0">{i}.</span>{t[`receiveStep${i}`]}</li>)}
-              </ol>
-            </div>
-            <div className="bg-red-900/20 border border-red-600/30 rounded-xl p-4">
-              <p className="text-sm text-red-300">{t.walletNote}</p>
+              {WALLETS.map(w => (
+                <a key={w.id} href={w.url} target="_blank" rel="noreferrer"
+                  className="p-4 rounded-xl border border-gray-700 bg-gray-800/50 hover:border-purple-500 hover:bg-gray-800 transition-all group">
+                  <div className="font-bold text-purple-400 group-hover:text-purple-300">{w.name}</div>
+                  <div className="text-xs text-gray-400 mt-1">{t[w.descKey]}</div>
+                </a>
+              ))}
             </div>
           </div>
         </Section>
       )}
 
       {activeTab === "network" && (
-        <Section title={t.networkGuide}>
-          <div className="max-w-lg mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <div className="space-y-3">
+        <Section id="network" title={t.networkGuide}>
+          <div className="max-w-2xl mx-auto space-y-4">
+            <p className="text-gray-400 text-sm leading-relaxed">{t.networkDesc}</p>
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 space-y-3">
               {netDetails.map((d, i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-800 last:border-0">
+                <div key={i} className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">{d.label}</span>
-                  <code className="text-sm text-purple-300 font-mono text-right">{d.value}</code>
+                  <span className="text-sm font-mono text-purple-300">{d.value}</span>
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-xs text-gray-500 leading-relaxed">MetaMask → Settings → Networks → Add Network → Fill details above</p>
           </div>
         </Section>
       )}
 
       {activeTab === "buy" && (
-        <Section title={t.howToBuy}>
-          <div className="max-w-lg mx-auto bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="font-bold text-purple-400 mb-3">{t.maticAmount} / {t.usdtAmount}</h3>
-            <ol className="space-y-3 text-sm text-gray-300">
-              <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">1.</span>{t.exchangeStep1}</li>
-              <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">2.</span>{t.exchangeStep2}</li>
-              <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">3.</span>{t.exchangeStep3}</li>
-            </ol>
+        <Section id="buy" title={t.howToBuy}>
+          <div className="max-w-2xl mx-auto space-y-4">
+            <p className="text-gray-400 text-sm leading-relaxed">{t.buyDesc}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {["Binance", "Coinbase", "OKX", "Kraken"].map(ex => (
+                <a key={ex} href={`https://www.${ex.toLowerCase()}.com/en/price/polygon`} target="_blank" rel="noreferrer"
+                  className="p-4 rounded-xl border border-gray-700 bg-gray-800/50 hover:border-purple-500 hover:bg-gray-800 transition-all group">
+                  <div className="font-bold text-purple-400 group-hover:text-purple-300">{ex}</div>
+                  <div className="text-xs text-gray-400 mt-1">{t.buyFromExc}</div>
+                </a>
+              ))}
+            </div>
           </div>
         </Section>
       )}
 
       {activeTab === "dex" && (
-        <Section title={t.liquidity}>
+        <Section id="dex" title={t.liquidity}>
           <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h3 className="font-bold text-purple-400 mb-4">{t.dexGuide}</h3>
-              <div className="flex gap-3 mb-4 flex-wrap">
+            <p className="text-gray-400 text-sm leading-relaxed">{t.liquidityDesc}</p>
+            <div>
+              <p className="text-sm text-purple-300 font-bold mb-3">{t.liquidityTitle}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {DEXES.map(d => (
-                  <a key={d.name} href={d.url} target="_blank" rel="noreferrer"
-                    className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">{d.name} ↗</a>
+                  <a key={d.name} href={`${d.url}`} target="_blank" rel="noreferrer"
+                    className="p-4 rounded-xl border border-gray-700 bg-gray-800/50 hover:border-purple-500 hover:bg-gray-800 transition-all group">
+                    <div className="font-bold text-purple-400 group-hover:text-purple-300">{d.name}</div>
+                    <div className="text-xs text-gray-400 mt-1">{t.addLiquidity}</div>
+                  </a>
                 ))}
               </div>
-              <ol className="space-y-2 text-sm text-gray-300">
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">1.</span>{t.dexStep1}</li>
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">2.</span>{t.dexStep2}</li>
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">3.</span>{t.dexStep3}</li>
-                <li className="flex gap-3"><span className="text-purple-400 font-bold shrink-0">4.</span>{t.dexStep4}</li>
-              </ol>
             </div>
-            <div className="bg-gray-900 border border-amber-500/20 rounded-xl p-6">
-              <h3 className="font-bold text-amber-400 mb-3">{t.cexGuide}</h3>
-              <p className="text-sm text-gray-400">{t.cexNote}</p>
-            </div>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h3 className="font-bold text-purple-400 mb-4">{t.aggregatorGuide}</h3>
-              <div className="flex gap-3 flex-wrap">
-                {AGGREGATORS.map(a => (
-                  <a key={a.name} href={a.url} target="_blank" rel="noreferrer"
-                    className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">{a.name} ↗</a>
+            <div>
+              <p className="text-sm text-purple-300 font-bold mb-3">{t.priceTrack}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {AGGREGATORS.map(d => (
+                  <a key={d.name} href={d.url} target="_blank" rel="noreferrer"
+                    className="p-4 rounded-xl border border-gray-700 bg-gray-800/50 hover:border-purple-500 hover:bg-gray-800 transition-all group">
+                    <div className="font-bold text-purple-400 group-hover:text-purple-300">{d.name}</div>
+                    <div className="text-xs text-gray-400 mt-1">{t.priceTrack}</div>
+                  </a>
                 ))}
               </div>
             </div>
@@ -558,72 +711,55 @@ export default function App() {
       )}
 
       {activeTab === "tokens" && (
-        <Section title={t.tokensList}>
+        <Section id="tokens" title={t.tokensList}>
           <TokenList />
         </Section>
       )}
 
-      {activeTab === "owner" && isOwner && <OwnerSettings maticFee={maticFee} />}
-
       {activeTab === "tutorial" && (
-        <Section title={t.tutorialTitle}>
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
-              <p className="text-sm text-gray-300">{t.tutorialIntro}</p>
-            </div>
-
-            <div className="bg-green-900/20 border border-green-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-green-400 mb-2">{t.t1Title}</h3>
+        <Section id="tutorial" title={t.tutorialTab}>
+          <div className="max-w-2xl mx-auto leading-relaxed space-y-6">
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
+              <h3 className="font-bold text-purple-400 mb-2">{t.t1Title}</h3>
               <p className="text-sm text-gray-300 mb-3">{t.t1Desc}</p>
-              <p className="text-sm text-green-300 font-bold mb-2">{t.t1SubA}</p>
-              <ol className="space-y-1 text-sm text-gray-300 mb-4">
-                {[1,2,3,4,5,6].map(i => <li key={i} className="flex gap-2"><span className="text-green-400 font-bold shrink-0">{i}.</span>{t[`t1A${i}`]}</li>)}
-              </ol>
-              <p className="text-sm text-blue-300 font-bold mb-2">{t.t1SubB}</p>
               <ol className="space-y-1 text-sm text-gray-300 mb-3">
-                {[1,2,3].map(i => <li key={i} className="flex gap-2"><span className="text-blue-400 font-bold shrink-0">{i}.</span>{t[`t1B${i}`]}</li>)}
+                {[1,2,3,4,5,6].map(i => <li key={i} className="flex gap-2"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`t1Step${i}`]}</li>)}
               </ol>
-              <p className="text-xs text-gray-400">{t.t1Wallets}</p>
+              <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">{t.t1Note}</p>
             </div>
 
-            <div className="bg-orange-900/20 border border-orange-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-orange-400 mb-2">{t.t2Title}</h3>
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
+              <h3 className="font-bold text-purple-400 mb-2">{t.t2Title}</h3>
               <p className="text-sm text-gray-300 mb-3">{t.t2Desc}</p>
-              <p className="text-sm text-gray-400 mb-2">{t.t2How}</p>
-              <div className="space-y-2">
-                {[{ l: t.t2Name, v: t.t2NameV }, { l: t.t2Rpc, v: t.t2RpcV }, { l: t.t2Chain, v: t.t2ChainV }, { l: t.t2Symbol, v: t.t2SymbolV }, { l: t.t2Explorer, v: t.t2ExplorerV }].map((d, i) => (
-                  <div key={i} className="flex justify-between items-center py-1 border-b border-gray-700 last:border-0">
-                    <span className="text-sm text-gray-400">{d.l}</span>
-                    <code className="text-sm text-orange-300 font-mono">{d.v}</code>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">{t.t2Note}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5,6,7].map(i => <li key={i} className="flex gap-2"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`t2Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-gray-500">{t.t2Note}</p>
             </div>
 
-            <div className="bg-purple-900/20 border border-purple-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-purple-400 mb-2">{t.t3Title}</h3>
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
+              <h3 className="font-bold text-green-400 mb-2">{t.t3Title}</h3>
               <p className="text-sm text-gray-300 mb-3">{t.t3Desc}</p>
               <ol className="space-y-1 text-sm text-gray-300 mb-3">
-                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`t3Step${i}`]}</li>)}
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-green-400 font-bold shrink-0">{i}.</span>{t[`t3Step${i}`]}</li>)}
               </ol>
-              <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">{t.t3Note}</p>
-            </div>
-
-            <div className="bg-cyan-900/20 border border-cyan-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-cyan-400 mb-2">{t.t4Title}</h3>
-              <p className="text-sm text-gray-300 mb-3">{t.t4Desc}</p>
-              <ol className="space-y-1 text-sm text-gray-300 mb-3">
-                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-cyan-400 font-bold shrink-0">{i}.</span>{t[`t4Step${i}`]}</li>)}
-              </ol>
-              <p className="text-xs text-gray-500">{t.t4Note}</p>
+              <p className="text-xs text-gray-500">{t.t3Note}</p>
             </div>
 
             <div className="bg-pink-900/20 border border-pink-600/30 rounded-xl p-5">
-              <h3 className="font-bold text-pink-400 mb-2">{t.t5Title}</h3>
+              <h3 className="font-bold text-pink-400 mb-2">{t.t4Title}</h3>
+              <p className="text-sm text-gray-300 mb-3">{t.t4Desc}</p>
+              <ol className="space-y-1 text-sm text-gray-300 mb-3">
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-pink-400 font-bold shrink-0">{i}.</span>{t[`t4Step${i}`]}</li>)}
+              </ol>
+              <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">{t.t4Note}</p>
+            </div>
+
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
+              <h3 className="font-bold text-purple-400 mb-2">{t.t5Title}</h3>
               <p className="text-sm text-gray-300 mb-3">{t.t5Desc}</p>
               <ol className="space-y-1 text-sm text-gray-300 mb-3">
-                {[1,2,3,4,5,6,7,8].map(i => <li key={i} className="flex gap-2"><span className="text-pink-400 font-bold shrink-0">{i}.</span>{t[`t5Step${i}`]}</li>)}
+                {[1,2,3,4,5].map(i => <li key={i} className="flex gap-2"><span className="text-purple-400 font-bold shrink-0">{i}.</span>{t[`t5Step${i}`]}</li>)}
               </ol>
               <p className="text-xs text-yellow-300 bg-yellow-900/20 rounded-lg p-2">{t.t5Note}</p>
             </div>
@@ -682,17 +818,93 @@ export default function App() {
         </Section>
       )}
 
+      {activeTab === "articles" && (
+        <Section id="articles" title={t.articlesTab}>
+          <Articles />
+        </Section>
+      )}
+
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-xl p-4 text-xs text-yellow-300 space-y-2">
           <p className="font-bold">⚠️ {lang === "fa" ? "هشدارهای امنیتی مهم" : "Important Security Warnings"}</p>
           <p>🔸 {lang === "fa" ? "هرگز عبارت بازیابی (Seed Phrase) را با کسی به اشتراک نگذارید" : "Never share your Seed Phrase with anyone"}</p>
           <p>🔸 {lang === "fa" ? "هیچکس از طرف تیم با شما تماس خصوصی نمی‌گیرد" : "Team members will never DM you first"}</p>
           <p>🔸 {lang === "fa" ? "همیشه آدرس قرارداد را قبل از خرید چک کنید" : "Always verify contract addresses before buying"}</p>
-          
         </div>
       </div>
-      <footer className="border-t border-gray-800 py-6 text-center text-xs text-gray-500 px-4">{t.footer} | <a href="mailto:ammm37474@gmail.com" className="text-purple-400 hover:text-purple-300 underline">ammm37474@gmail.com</a></footer>
+      <footer className="border-t border-gray-800 py-6 text-center text-xs text-gray-500 px-4">
+        <a href="https://t.me/polymint_crypto" target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:opacity-90 transition mb-4">
+          ✈️ {t.joinChannel}
+        </a>
+        <p>{t.footer} | <a href="mailto:ammm37474@gmail.com" className="text-purple-400 hover:text-purple-300 underline">ammm37474@gmail.com</a></p>
+      </footer>
     </div>
+  );
+}
+
+function Stats() {
+  const { t, lang } = useLanguage();
+  const config = useConfig();
+  const [visits, setVisits] = useState({ today: 0, month: 0, year: 0, total: 0 });
+  const [tokenCount, setTokenCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/stats").then(r => r.json()).then(d => { if (!cancelled) setVisits(d); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const client = await getPublicClient(config, { chainId: polygon.id });
+        const logs = await client.getLogs({
+          address: FACTORY_ADDR,
+          event: {
+            type: 'event',
+            name: 'TokenCreated',
+            inputs: [
+              { type: 'address', name: 'creator', indexed: true },
+              { type: 'address', name: 'tokenAddress', indexed: true },
+              { type: 'string', name: 'name', indexed: false },
+              { type: 'string', name: 'symbol', indexed: false },
+              { type: 'uint256', name: 'totalSupply', indexed: false },
+              { type: 'string', name: 'paymentMethod', indexed: false },
+            ],
+          },
+          fromBlock: 0n,
+        });
+        if (!cancelled) setTokenCount(logs.length);
+      } catch (err) {
+        console.error("Failed to count tokens:", err);
+        const local = JSON.parse(localStorage.getItem("deployedTokens") || "[]");
+        if (!cancelled) setTokenCount(local.length);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [config]);
+
+  const cards = [
+    { label: t.statsToday, value: visits.today, icon: "👁️" },
+    { label: t.statsMonth, value: visits.month, icon: "📅" },
+    { label: t.statsYear, value: visits.year, icon: "🗓️" },
+    { label: t.statsTokens, value: tokenCount, icon: "🪙" },
+  ];
+
+  return (
+    <Section title={t.statsTitle}>
+      <div className="max-w-2xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {cards.map(s => (
+          <div key={s.label} className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-center hover:border-purple-500 transition-all">
+            <div className="text-2xl mb-1">{s.icon}</div>
+            <div className="text-2xl font-bold text-purple-400">{Number(s.value || 0).toLocaleString()}</div>
+            <div className="text-xs text-gray-400 mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -784,54 +996,108 @@ function TokenList() {
   );
 }
 
-function OwnerSettings({ maticFee }) {
-  const { lang } = useLanguage();
-  const [newFee, setNewFee] = useState("");
-  const [saving, setSaving] = useState(false);
-  const { writeContractAsync } = useWriteContract();
-  const currentMatic = maticFee ? Number(maticFee) / 1e18 : 0;
+const TOPIC_STYLES = {
+  basics: "bg-purple-900/40 text-purple-300 border-purple-600/40",
+  islamic: "bg-green-900/40 text-green-300 border-green-600/40",
+  security: "bg-red-900/40 text-red-300 border-red-600/40",
+  market: "bg-blue-900/40 text-blue-300 border-blue-600/40",
+  mining: "bg-amber-900/40 text-amber-300 border-amber-600/40",
+};
 
-  const handleSave = async () => {
-    if (!newFee || isNaN(newFee) || Number(newFee) <= 0) return;
-    setSaving(true);
+function Articles() {
+  const { t, lang } = useLanguage();
+  const [data, setData] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/articles")
+      .then(r => r.json())
+      .then(d => { if (!cancelled) { setData(d); setLoading(false); } })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const openArticle = async (date) => {
+    setSelected({ date, loading: true });
     try {
-      await ensurePolygonNetwork();
-      const feeWei = (BigInt(Math.floor(Number(newFee) * 1e18))).toString();
-      await writeContractAsync({
-        address: FACTORY_ADDR,
-        abi: FACTORY_ABI,
-        functionName: "setFees",
-        args: [feeWei, "0"],
-      });
-      alert(lang === "fa" ? "کارمزد با موفقیت تغییر یافت! صفحه را رفرش کنید." : "Fee updated successfully! Refresh the page.");
-    } catch (err) {
-      alert(err?.shortMessage || err?.message || "Transaction failed");
-    }
-    setSaving(false);
+      const r = await fetch(`/api/articles?date=${date}`);
+      const d = await r.json();
+      if (d.article) setSelected({ date, ...d.article });
+    } catch {}
   };
 
+  if (loading && !data) return <p className="text-center text-gray-500 py-8">{t.articleLoading}</p>;
+  if (!data) return <p className="text-center text-gray-500 py-8">{t.articleNoHistory}</p>;
+
+  const today = data.today;
+  const isPast = selected && selected.date && selected.date !== today.date;
+  const current = isPast ? selected : today;
+  const title = (lang === "fa" ? current.titleFa : current.titleEn) || current.titleEn;
+  const body = (lang === "fa" ? current.bodyFa : current.bodyEn) || current.bodyEn;
+  const topicName = { basics: t.articleTopicBasics, islamic: t.articleTopicIslamic, security: t.articleTopicSecurity, market: t.articleTopicMarket, mining: t.articleTopicMining }[current.topic] || current.topic;
+  const topicStyle = TOPIC_STYLES[current.topic] || TOPIC_STYLES.basics;
+
   return (
-    <Section title={lang === "fa" ? "🔧 تنظیمات مالک سایت" : "🔧 Owner Settings"}>
-      <div className="max-w-lg mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-5">
-        <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-          <p className="text-sm text-gray-400">{lang === "fa" ? "کارمزد فعلی" : "Current Fee"}</p>
-          <p className="text-2xl font-bold text-purple-300">{currentMatic.toFixed(2)} MATIC</p>
-          <p className="text-xs text-gray-500 mt-1">≈ ${(currentMatic * 0.40).toFixed(2)} USD</p>
+    <div className="max-w-3xl mx-auto space-y-8">
+      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${topicStyle}`}>{topicName}</span>
+          <span className="text-xs text-gray-500">📅 {current.date}</span>
+          <span className="text-xs text-gray-500">• {t.articlePublished}</span>
         </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">{lang === "fa" ? "کارمزد جدید (MATIC)" : "New Fee (MATIC)"}</label>
-          <input type="number" step="0.1" min="0.1" placeholder="مثلا 12.5" value={newFee}
-            onChange={e => setNewFee(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500" />
-          <p className="text-xs text-gray-500 mt-1">
-            {lang === "fa" ? "5 USD ≈ 12.5 MATIC (با قیمت ~$0.40)" : "5 USD ≈ 12.5 MATIC (at ~$0.40/ POL)"}
-          </p>
+        <h3 className="text-xl sm:text-2xl font-bold text-purple-300 mb-4">{title}</h3>
+        <div className="flex items-center gap-2 mb-4">
+          <a href={`/article/${current.slug}`} target="_blank" rel="noreferrer"
+            className="bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-1.5 text-xs font-medium transition-all">
+            🔗 {lang === "fa" ? "لینک مقاله" : "Article Link"}
+          </a>
+          <button onClick={() => {
+            const link = `https://ploymint.polyganfactorytoken.workers.dev/article/${current.slug}`;
+            navigator.clipboard?.writeText(link).then(() => alert(lang === "fa" ? "لینک کپی شد" : "Link copied"));
+          }}
+            className="bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-1.5 text-xs font-medium transition-all">
+            📋 {lang === "fa" ? "کپی لینک" : "Copy Link"}
+          </button>
         </div>
-        <button onClick={handleSave} disabled={saving}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 font-bold py-3 rounded-xl transition-all disabled:opacity-50">
-          {saving ? (lang === "fa" ? "در حال ذخیره..." : "Saving...") : (lang === "fa" ? "💾 ذخیره کارمزد" : "💾 Save Fee")}
-        </button>
+        <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+          {body.split("\n\n").map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </div>
+        {isPast && (
+          <button onClick={() => setSelected(null)}
+            className="mt-6 bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-medium transition-all">
+            ← {t.articleBackToToday}
+          </button>
+        )}
       </div>
-    </Section>
+
+      <a href="https://t.me/polymint_crypto" target="_blank" rel="noopener noreferrer"
+        className="block rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/40 to-pink-900/40 p-4 text-sm text-purple-200 hover:border-purple-400 transition-all">
+        ✈️ <b>{lang === "fa" ? "هر روز یک آموزش رایگان تلگرامی دریافت کنید" : "Get a free daily lesson on Telegram"}</b>
+        <span className="block mt-1 text-xs text-gray-400">{lang === "fa" ? "عضویت در کانال پلی‌مینت کریپتو" : "Join PolyMint Crypto channel"} →</span>
+      </a>
+
+      <div className="bg-yellow-900/15 border border-yellow-600/30 rounded-xl p-4 text-xs text-yellow-200 leading-relaxed">
+        ⚠️ {t.articleDisclaimer}
+      </div>
+
+      {data.history && data.history.length > 0 && (
+        <div>
+          <h4 className="text-sm font-bold text-gray-400 mb-3">📚 {t.articleArchive}</h4>
+          <div className="space-y-2">
+            {data.history.map(h => (
+              <button key={h.date} onClick={() => openArticle(h.date)}
+                className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-left transition-all ${h.date === today.date ? "bg-purple-900/30 border-purple-600/40" : "bg-gray-800/40 border-gray-700 hover:border-purple-500"}`}>
+                <span className="text-sm font-medium text-white">{lang === "fa" ? h.titleFa : h.titleEn}</span>
+                <span className="text-xs text-gray-500 shrink-0 font-mono">{h.date}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

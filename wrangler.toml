@@ -2,6 +2,14 @@ name = "ploymint"
 compatibility_date = "2026-07-25"
 command = "cd site && npm install && npm run build"
 
+main = "worker.js"
+
 [assets]
 directory = "./site/dist"
 
+[[kv_namespaces]]
+binding = "STATS"
+id = "b90738133f474a09aab9e9a2538bd168"
+
+[triggers]
+crons = ["0 0 * * *"]

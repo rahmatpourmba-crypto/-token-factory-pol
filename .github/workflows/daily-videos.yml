@@ -1,0 +1,53 @@
+name: Daily Videos (Telegram + YouTube)
+
+on:
+  schedule:
+    # 05:30 and 13:30 UTC = 09:00 and 17:30 Tehran time (GMT+3:30)
+    - cron: "30 5,13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-videos
+  cancel-in-progress: true
+
+jobs:
+  build-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r youtube/requirements-actions.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-dejavu
+
+      - name: Generate + post daily videos
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHANNEL: ${{ secrets.TG_CHANNEL }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: |
+          python youtube/make_daily_video.py
+
+      - name: Upload videos as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-videos
+          path: |
+            youtube/daily_out/daily_market.mp4
+            youtube/daily_out/daily_lesson.mp4
+            youtube/daily_out/daily_market.txt
+            youtube/daily_out/daily_lesson.txt
+          if-no-files-found: error
