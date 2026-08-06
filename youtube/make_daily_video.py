@@ -1,4 +1,4 @@
-import asyncio, base64, io, json, os, platform, re, subprocess, sys, time
+import asyncio, base64, io, json, os, platform, re, shutil, subprocess, sys, time
 from datetime import datetime, timezone
 
 import numpy as np
@@ -20,7 +20,7 @@ CF_ACCT = os.environ.get("CF_ACCOUNT_ID")
 TG_TOKEN = os.environ.get("TG_BOT_TOKEN")
 TG_CHANNEL = os.environ.get("TG_CHANNEL", "-1003912340521")
 
-FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+FFMPEG = shutil.which("ffmpeg") or imageio_ffmpeg.get_ffmpeg_exe()
 if platform.system() == "Windows":
     FONT_BOLD = "C\\:/Windows/Fonts/arialbd.ttf"
     FONT_REG = "C\\:/Windows/Fonts/arial.ttf"

@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install -r youtube/requirements-actions.txt
           sudo apt-get update -qq
-          sudo apt-get install -y -qq fonts-dejavu
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu
 
       - name: Generate + post daily videos
         env:
